@@ -6,26 +6,28 @@
         <span>
           {{ item.name }}
           <Tag class="ml_10" v-if="item.isDefault" color="red">默认地址</Tag>
-          <Tag class="ml_10" v-if="item.alias" color="warning">{{item.alias}}</Tag>
+          <Tag class="ml_10" v-if="item.addressAlias" color="warning">{{item.addressAlias}}</Tag>
         </span>
         <div class="address-action">
+          <span v-if="!item.isDefault" @click="setDefault(item.id,true)"><Icon type="edit"></Icon>设为默认</span>
+          <span v-if="item.isDefault" @click="setDefault(item.id,false)"><Icon type="edit"></Icon>取消默认</span>
           <span @click="edit(item.id)"><Icon type="edit"></Icon>修改</span>
           <span @click="del(item.id)"><Icon type="trash-a"></Icon>删除</span>
         </div>
       </div>
       <div class="address-content">
         <p>
-          <span class="address-content-title"> 收 货 人 :</span> {{ item.name }}
+          <span class="address-content-title"> 收 货 人 ：</span> {{ item.name }}
         </p>
         <p>
-          <span class="address-content-title">收货地区:</span
-          >{{ item.consigneeAddressPath | unitAddress }}
+          <span class="address-content-title">收货地区：</span
+          >{{ item.regionNames }}
         </p>
         <p>
-          <span class="address-content-title">详细地址:</span> {{ item.detail }}
+          <span class="address-content-title">详细地址：</span> {{ item.detailAddress }}
         </p>
         <p>
-          <span class="address-content-title">手机号码:</span> {{ item.mobile }}
+          <span class="address-content-title">手机号码：</span> {{ item.mobile }}
         </p>
       </div>
     </div>
@@ -34,7 +36,7 @@
 
 <script>
 import card from '@/components/card';
-import { memberAddress, delMemberAddress } from '@/api/address.js';
+import { getRecipientInfoList, updateIsDefault, deleteRecipientInfo } from "@/api/mall-member/recipient-info";
 
 export default {
   name: 'MyAddress',
@@ -55,10 +57,13 @@ export default {
         title: '提示',
         content: '你确定删除这个收货地址',
         onOk: () => {
-          delMemberAddress(id).then((res) => {
-            if (res.success) {
+          var params =  this.axios.paramsHandler({id: id});
+          deleteRecipientInfo(params).then(({data}) => {
+            if (data && data.code=='200') {
               this.$Message.success('删除成功');
-              this.getAddrList();
+              this.getRecipientInfoList();
+            } else {
+              this.$Message.error('删除失败');
             }
           });
         },
@@ -67,18 +72,37 @@ export default {
         }
       });
     },
-    getAddrList () {
+
+    //获取收货信息
+    getRecipientInfoList() {
       // 获取地址列表
-      memberAddress().then((res) => {
-        console.log(res);
-        if (res.success) {
-          this.list = res.result.records;
+      getRecipientInfoList().then(({data}) => {
+        if (data && data.code === "200") {
+          this.list = data.data;
         }
       });
-    }
+    },
+
+    /**
+     * 设为默认 1/ 取消默认2
+     */
+    setDefault(id, isDefault){
+      var params =  this.axios.paramsHandler({
+        id: id,
+        isDefault: isDefault
+      });
+      updateIsDefault(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.$Message.success('设置成功');
+          this.getRecipientInfoList();
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
   },
   mounted () {
-    this.getAddrList();
+    this.getRecipientInfoList();
   }
 };
 </script>
@@ -110,7 +134,7 @@ export default {
 }
 
 .address-content-title {
- 
+
 }
 
 .address-action span {
