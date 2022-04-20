@@ -37,16 +37,29 @@
 <script>
 import card from '@/components/card';
 import { getRecipientInfoList, updateIsDefault, deleteRecipientInfo } from "@/api/mall-member/recipient-info";
+import { getUserInfo } from "@/utils/auth";
 
 export default {
   name: 'MyAddress',
 
   data () {
     return {
-      list: [] // 地址列表
+      list: [], // 地址列表
+      userInfo: {
+        userId: 0
+      }
     };
   },
   methods: {
+
+    /**
+     * cookie中获取当前登录的用户信息
+     */
+    getUserInfo() {
+      var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
+      this.userInfo = userInfo;
+    },
+
     edit (id) {
       // 编辑地址
       this.$router.push({ path: '/home/addAddress', query: { id: id } });
@@ -75,8 +88,8 @@ export default {
 
     //获取收货信息
     getRecipientInfoList() {
-      // 获取地址列表
-      getRecipientInfoList().then(({data}) => {
+      var params = this.axios.paramsHandler({memberId: this.userInfo.userId});
+      getRecipientInfoList(params).then(({data}) => {
         if (data && data.code === "200") {
           this.list = data.data;
         }
@@ -102,6 +115,7 @@ export default {
     },
   },
   mounted () {
+    this.getUserInfo()
     this.getRecipientInfoList();
   }
 };

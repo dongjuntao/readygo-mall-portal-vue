@@ -126,9 +126,8 @@ export default {
       });
     },
 
+    //获取收货信息详情
     getRecipientInfoById(id) {
-      console.log("id====",id)
-      // 获取地址详情
       var that = this
       var params = this.axios.paramsHandler({id: this.$route.query.id})
       getRecipientInfoById(params).then(async function ({data}) {

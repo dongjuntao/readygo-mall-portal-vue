@@ -22,10 +22,15 @@ const homepageConstant = {
   homepage_carousel_folder_name: "/homepage/carousel/images/" //首页轮播图文件夹路径前缀
 }
 
+const memberConstant = {
+  member_avatar: "/member/avatar" //会员头像
+}
+
 
 export {
   brandConstant,
   goodsConstant,
   adminUserConstant,
-  homepageConstant
+  homepageConstant,
+  memberConstant
 };

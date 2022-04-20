@@ -263,12 +263,6 @@ export default new Router({
       meta: {title: '我的收藏'}
     },
     {
-      path: 'Distribution',
-      name: 'Distribution',
-      component: Distribution,
-      meta: {title: '分销推荐'}
-    },
-    {
       path: 'Point',
       name: 'Point',
       component: Point,

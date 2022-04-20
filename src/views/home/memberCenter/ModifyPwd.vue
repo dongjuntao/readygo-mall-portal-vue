@@ -21,33 +21,33 @@
     </div>
 
     <!--  修改  -->
-    <Form ref="formRegister" :model="formRegister" :rules="ruleInline" :label-width="80" v-if="status == 1 && !showPwd">
-      <FormItem label="旧密码" prop="password">
-        <i-input type="password" v-model="formRegister.password" clearable size="large" placeholder="请输入旧密码"
+    <Form ref="memberUpdateForm" :model="memberUpdateForm" :rules="ruleMemberUpdate" :label-width="80" v-if="status == 1 && !showPwd">
+      <FormItem label="旧密码" prop="oldPassword">
+        <i-input type="password" v-model="memberUpdateForm.oldPassword" clearable size="large" placeholder="请输入旧密码"
                  style="width: 300px"
                  maxlength="12">
           <Icon type="md-lock" slot="prepend"></Icon>
         </i-input>
       </FormItem>
       <FormItem label="新密码" prop="newPassword">
-        <i-input type="password" v-model="formRegister.newPassword" clearable size="large" placeholder="请输入新密码"
+        <i-input type="password" v-model="memberUpdateForm.newPassword" clearable size="large" placeholder="请输入新密码"
                  style="width: 300px"
                  maxlength="12">
           <Icon type="md-lock" slot="prepend"></Icon>
         </i-input>
       </FormItem>
       <FormItem label="确认密码" prop="againPassword">
-        <i-input type="password" v-model="formRegister.againPassword" clearable size="large" placeholder="请输入确认密码"
+        <i-input type="password" v-model="memberUpdateForm.againPassword" clearable size="large" placeholder="请输入确认密码"
                  style="width: 300px"
                  maxlength="12">
           <Icon type="md-lock" slot="prepend"></Icon>
         </i-input>
       </FormItem>
-
     </Form>
     <div slot="footer" v-if="status == 1 && !showPwd" style="width: 50%;text-align: center">
-      <Button type="primary" class="ml_10" @click="handleRegist">修改</Button>
+      <Button type="primary" class="ml_10" @click="handleUpdatePassword">修改</Button>
     </div>
+
     <!-- 设置&修改的第二种情况   -->
     <Form ref="formDataUpdate" :model="formDataUpdate" label-position="left" :label-width="100" :rules="ruleIn"
           v-if="showPwd">
@@ -73,19 +73,26 @@
 </template>
 
 <script>
-import {
-  setPwd,
-  editPwd
-} from '@/api/account';
-import {md5} from '@/plugins/md5.js'
+import { updatePassword } from '@/api/mall-member/member'
+import { getUserInfo } from "@/utils/auth";
 
 export default {
   name: 'modifyPwd',
   data () {
+    var againPasswordValidator = (rule, value, callback) => {
+      if (value == '') {
+        callback(new Error("请输入确认密码"))
+      }else if (value !== this.memberUpdateForm.newPassword) {
+        callback(new Error("两次密码输入不一致"))
+      } else {
+        callback();
+      }
+    }
     return {
       // 1为修改    2为设置     3为提交校验的下一步
       status: '',
       showPwd: false, // 显示密码
+      userInfo: null,
       formData: { // 验证表单
         picture: '',
         msg: ''
@@ -94,10 +101,10 @@ export default {
         newPassword: '',
         againPassword: ''
       },
-      formRegister: { // 第三步 新密码表单
-        password: '',
-        againPassword: '',
-        newPassword: ''
+      memberUpdateForm: { //会员修改密码
+        oldPassword: '',
+        newPassword: '',
+        againPassword: ''
       },
       ruleInLines: { // 验证规则
         picture: [
@@ -117,8 +124,8 @@ export default {
           {type: 'string', min: 6, message: '密码不能少于6位'}
         ]
       },
-      ruleInline: { // 验证规则
-        password: [
+      ruleMemberUpdate: { // 验证规则
+        oldPassword: [
           {required: true, message: '请输入旧密码', trigger: 'blur'}
         ],
         newPassword: [
@@ -126,34 +133,39 @@ export default {
           {type: 'string', min: 6, message: '密码不能少于6位'}
         ],
         againPassword: [
-          {required: true, message: '请确认新密码', trigger: 'blur'},
-          {type: 'string', min: 6, message: '密码不能少于6位'}
+          {required: true, validator:againPasswordValidator, trigger: 'blur'}
         ]
       }
     }
   },
   mounted () {
+    this.getUserInfo()
     this.status = this.$route.query.status
   },
   methods: {
-    // 修改
-    handleRegist () {
-      this.$refs['formRegister'].validate((valid) => {
+    /**
+     * cookie中获取当前登录的用户信息
+     */
+    getUserInfo() {
+      var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
+      this.userInfo = userInfo;
+    },
+
+    // 修改密码
+    handleUpdatePassword () {
+      this.$refs['memberUpdateForm'].validate((valid) => {
         if (valid) {
-          const {newPassword, againPassword, password} = this.formRegister
-          if (newPassword !== againPassword) {
-            this.$Message.error({
-              content: '新旧密码不一致'
-            });
-            return
-          }
-          const params = {newPassword, password}
-          params.newPassword = md5(newPassword)
-          params.password = md5(password)
-          editPwd(params).then(res => {
-            if (res.message === 'success' && res.result) {
+          var params = this.axios.paramsHandler({
+            memberId: this.userInfo.userId,
+            oldPassword: this.memberUpdateForm.oldPassword,
+            newPassword: this.memberUpdateForm.newPassword
+          });
+          updatePassword(params).then(({data}) => {
+            if (data && data.code=='200') {
               this.$Message.success('修改密码成功');
               this.$router.push('/home')
+            } else {
+              this.$Message.error(data.message);
             }
           });
         }

@@ -21,10 +21,10 @@
       </div>
       <div class="nav-right">
         <div class="person-msg">
-          <img :src="userInfo.face" v-if="userInfo.face" alt />
+          <img :src="userInfo.avatar" v-if="userInfo.avatar" alt />
           <Avatar icon="ios-person" class="mb_10" v-else size="80" />
-          <div>Hi，{{ userInfo.nickName || `欢迎来到${config.title}` | secrecyMobile }}</div>
-          <div v-if="userInfo.id">
+          <div>Hi，{{ userInfo.userName || `欢迎来到${config.title}` | secrecyMobile }}</div>
+          <div v-if="userInfo.userId">
             <Button type="error" shape="circle" @click="$router.push('home')">会员中心</Button>
           </div>
           <div v-else>
@@ -51,7 +51,7 @@
 <script>
 
 import {articleList} from '@/api/common.js'
-import storage from '@/plugins/storage';
+import { getUserInfo } from '@/utils/auth'
 export default {
   name: 'modelCarousel',
   props: ['data'],
@@ -83,10 +83,17 @@ export default {
     //   });
     //   window.open(routeUrl.href, '_blank');
     // }
+
+    /**
+     * cookie中获取当前登录的用户信息
+     */
+    getUserInfo() {
+      var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
+      this.userInfo = userInfo;
+    },
   },
   mounted () {
-    if (storage.getItem('userInfo')) this.userInfo = JSON.parse(storage.getItem('userInfo'));
-    // this.getArticleList()
+    this.getUserInfo()
   }
 };
 </script>

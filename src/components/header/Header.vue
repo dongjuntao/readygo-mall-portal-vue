@@ -18,7 +18,7 @@
         <li v-show="!!userInfo.userName">
           <div class="username-p">
             <div>
-              <Avatar class="person-icon" :src="userInfo.face" icon="person" size="small" />
+              <Avatar class="person-icon" :src="userInfo.avatar" icon="person" size="small" />
               <span class="username">{{ userInfo.userName }}</span>
             </div>
             <transition name='fade'>
@@ -141,7 +141,6 @@ export default {
 
     goUserCenter (path) {
       // 跳转我的订单，我的足迹、收藏等
-      console.log("this.userInfo.userName--",this.userInfo.userName)
       if (this.userInfo.userName) {
         this.$router.push({ path: path });
       } else {
