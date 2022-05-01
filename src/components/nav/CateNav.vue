@@ -107,18 +107,16 @@ export default {
   methods: {
     getCategoryLst () { // 获取分类数据
       if (this.hover) return false;
-      getCategoryAndMergedCategory(0).then(res => {
-        console.log('res == ', res)
-        if (res && res.code == '200') {
-          console.log("res.data == ", res.data)
-          this.categoryList = res.data.mergeCategoryList;
-          this.$store.commit('SET_CATEGORY', res.data)
+      getCategoryAndMergedCategory(0).then(({data}) => {
+        if (data && data.code == '200') {
+          this.categoryList = data.data.mergeCategoryList;
+          this.$store.commit('SET_CATEGORY', data.data)
           // 过期时间
           var expirationTime = new Date().setHours(new Date().getHours() + 1);
           // 存放过期时间
           localStorage.setItem('category_expiration_time', expirationTime);
           // 存放分类信息
-          localStorage.setItem('category', JSON.stringify(res.data))
+          localStorage.setItem('category', JSON.stringify(data.data))
         }
       });
     },

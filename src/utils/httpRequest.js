@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import axios from 'axios'
 import router from '@/router'
 import qs from 'qs'
@@ -18,7 +17,8 @@ const http = axios.create({
  * 请求拦截
  */
 http.interceptors.request.use(config => {
-  config.headers['Authorization'] = 'Bearer ' + getToken(sessionStorage.getItem("userNameKey")) // 请求头带上token
+  var token = getToken(sessionStorage.getItem("userNameKey"))
+  config.headers['Authorization'] = token ?  ('Bearer ' + token) : "" // 如果有token,就带上token, 没有token,就传空串
   return config
 }, error => {
   return Promise.reject(error)
@@ -29,7 +29,7 @@ http.interceptors.request.use(config => {
  */
 http.interceptors.response.use(response => {
   if(response.data && response.data.code === "401") {
-    this.$message.error(response.data.message);
+    this.$Message.error(response.data.message);
     clearLoginInfo()
     router.push({ name: 'login'})
   }

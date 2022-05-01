@@ -91,10 +91,10 @@ export default {
     getGoodsDetail() {
       this.isLoading = true;
       const params = this.$route.query;
-      getGoodsById(params).then((res) => {
+      getGoodsById(params).then(({data}) => {
         this.isLoading = false;
-        if (res && res.code == '200') {
-          this.goodsMsg = res;
+        if (data && data.code == '200') {
+          this.goodsMsg = data;
           // 判断是否收藏
           // if (this.Cookies.getItem("userInfo")) {
           //   isCollection("STORE", this.goodsMsg.data.storeId).then((res) => {
@@ -110,7 +110,7 @@ export default {
           //   }
           // });
         } else {
-          this.$Message.error(res.message);
+          this.$Message.error(data.message);
           this.$router.push("/");
         }
       }).catch(() => {

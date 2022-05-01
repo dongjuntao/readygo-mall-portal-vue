@@ -3,13 +3,13 @@
     <!-- 卡片组件 -->
     <card _Title="我的足迹" :_Size="16" ></card>
     <Button class="del-btn" @click="clearAll" type="primary">删除全部</Button>
-    <!-- 订单列表 -->
+    <!-- 足迹列表 -->
     <empty v-if="list.length === 0" />
     <ul class="track-list" v-else>
-      <li v-for="(item, index) in list" :key="index" @click="goodsDetail(item.id, item.goodsId)">
-        <img :src="item.thumbnail" :alt="item.thumbnail" width="200" height="200">
-        <p class="ellipsis">{{item.goodsName}}</p>
-        <p>{{item.price | unitPrice('￥')}}</p>
+      <li v-for="(item, index) in list" :key="index" @click="goodsDetail(item.footprintGoodsVO.skuId, item.footprintGoodsVO.id)">
+        <img :src="item.footprintGoodsVO.image" :alt="item.footprintGoodsVO.image" width="200" height="200">
+        <p class="ellipsis">{{item.footprintGoodsVO.name}}</p>
+        <p>{{item.footprintGoodsVO.price | unitPrice('￥')}}</p>
         <span class="del-icon" @click.stop="clearById(item.goodsId)">
           <Icon type="md-trash" />
         </span>
@@ -28,6 +28,8 @@
 
 <script>
 import { tracksList, clearTracks, clearTracksById } from '@/api/member';
+import { getFootprintList } from '@/api/mall-member/footprint'
+
 export default {
   name: 'MyTrack',
   data () {
@@ -44,14 +46,15 @@ export default {
     };
   },
   mounted () {
-    this.getList();
+    // this.getList();
+    this.getFootprintList()
   },
   methods: {
-    goodsDetail (skuId, goodsId) {
+    goodsDetail (skuId, id) {
       // 跳转商品详情
       let routeUrl = this.$router.resolve({
         path: '/goodsDetail',
-        query: { skuId, goodsId }
+        query: { skuId, id }
       });
       window.open(routeUrl.href, '_blank');
     },
@@ -95,6 +98,7 @@ export default {
       this.params.pageSize = val;
       this.getList()
     },
+
     getList () { // 获取足迹列表
       this.spinShow = true;
       tracksList(this.params).then(res => {
@@ -103,6 +107,22 @@ export default {
           this.list = res.result;
         } else {
           this.list = []
+        }
+      });
+    },
+
+
+
+    //获取会员足迹
+    getFootprintList() {
+      var params = this.axios.paramsHandler({});
+      getFootprintList(params).then(({data}) => {
+        if (data && data.code=='200') {
+          this.list = data.data.list;
+          console.log("data=============",data)
+          // this.totalPage = data.data.totalCount
+        } else {
+          this.$Message.error(data.message);
         }
       });
     }

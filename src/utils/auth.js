@@ -42,4 +42,5 @@ export function isAuth (key) {
 export function clearLoginInfo () {
   removeToken(sessionStorage.getItem("userNameKey"));
   removeUserInfo(sessionStorage.getItem("userNameKey"))
+  sessionStorage.clear();
 }

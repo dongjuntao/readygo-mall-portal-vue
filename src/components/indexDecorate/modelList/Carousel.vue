@@ -88,8 +88,10 @@ export default {
      * cookie中获取当前登录的用户信息
      */
     getUserInfo() {
-      var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
-      this.userInfo = userInfo;
+      if (getUserInfo(sessionStorage.getItem("userNameKey"))) {
+        var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
+        this.userInfo = userInfo;
+      }
     },
   },
   mounted () {

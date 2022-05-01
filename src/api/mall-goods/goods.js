@@ -1,4 +1,4 @@
-import request, {Method} from '@/plugins/request.js'
+import request from '@/utils/httpRequest'
 const prefix = "/mall-goods";
 
 /**
@@ -6,8 +6,8 @@ const prefix = "/mall-goods";
  */
 export function getGoodsList(params) {
   return request({
-    url: prefix+'/goods/list',
-    method: Method.GET,
+    url: prefix+'/front/goods/list',
+    method: "GET",
     params: params
   })
 }
@@ -17,8 +17,8 @@ export function getGoodsList(params) {
  */
 export function getGoodsById(params) {
   return request({
-    url: prefix+'/goods/getGoodsById',
-    method: Method.GET,
+    url: prefix+'/front/goods/getGoodsById',
+    method: "GET",
     params: params
   })
 }

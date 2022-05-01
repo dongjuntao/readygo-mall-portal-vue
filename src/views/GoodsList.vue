@@ -180,12 +180,12 @@ export default {
     // 获取商品列表
     getGoodsList () {
       this.loading = true;
-      getGoodsList(this.params).then((res) => {
-        console.log("getGoodsList=================res===",res)
+      getGoodsList(this.params).then(({data}) => {
           this.loading = false;
-          if (res && res.code == '200') {
-            this.goodsList = res.data.list;
-            this.total = res.result.totalCount;
+          console.log("data===============================",data)
+          if (data && data.code == '200') {
+            this.goodsList = data.data.list;
+            this.total = data.result.totalCount;
           }
         }).catch(() => {
           this.loading = false;

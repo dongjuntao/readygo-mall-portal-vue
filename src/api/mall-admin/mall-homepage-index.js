@@ -1,4 +1,4 @@
-import request from '@/plugins/request.js'
+import request from '@/utils/httpRequest'
 const prefix = "/mall-admin";
 
 /**

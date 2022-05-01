@@ -156,7 +156,6 @@ export default {
       this.$refs['memberUpdateForm'].validate((valid) => {
         if (valid) {
           var params = this.axios.paramsHandler({
-            memberId: this.userInfo.userId,
             oldPassword: this.memberUpdateForm.oldPassword,
             newPassword: this.memberUpdateForm.newPassword
           });

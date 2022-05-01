@@ -21,7 +21,6 @@ import Search from '@/components/Search';
 import ModelForm from '@/components/indexDecorate/ModelForm';
 import HoverSearch from '@/components/header/hoverSearch';
 import storage from '@/plugins/storage';
-// import { indexData } from '@/api/index.js';
 import { getIndexData } from '@/api/mall-admin/mall-homepage-index'
 import {seckillByDay} from '@/api/promotion'
 
@@ -52,9 +51,9 @@ export default {
   methods: {
     getIndexData () {
       // 获取首页装修数据
-      getIndexData().then((res) => {
-        if (res.code == '200') {
-          this.modelForm = res.data;
+      getIndexData().then(({data}) => {
+        if (data && data.code == '200') {
+          this.modelForm = data.data;
           storage.setItem('navList', this.modelForm.list[0])
           this.showNav = true
         }
