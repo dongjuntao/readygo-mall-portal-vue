@@ -12,3 +12,13 @@ export function getFootprintList(params) {
   })
 }
 
+/**
+ * 删除会员足迹
+ */
+export function deleteFootprint(params) {
+  return request({
+    url: prefix+'/footprint/delete',
+    method: 'DELETE',
+    params: params
+  })
+}
