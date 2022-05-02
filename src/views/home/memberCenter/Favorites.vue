@@ -6,26 +6,26 @@
       <template v-for="(item) in list">
         <div class="goodsItem" :key="item.skuId">
           <div class="goodsImg hover-pointer" v-if="params.type === 'GOODS'">
-            <img :src="item.image" />
+            <img :src="item.collectGoodsVO.image" />
           </div>
           <div class="goodsImg hover-pointer" v-else>
-            <img :src="item.storeLogo" />
+            <img :src="item.collectShopVO.avatar" />
           </div>
-          <div class="goodsTitle hover-color" v-if="params.type === 'GOODS'" @click="buynow(item.skuId, item.goodsId)">
-            {{item.goodsName}}
+          <div class="goodsTitle hover-color" v-if="params.type === 'GOODS'" @click="buynow(item.collectGoodsVO.skuId, item.collectGoodsVO.id)">
+            {{item.collectGoodsVO.name}}
           </div>
           <div v-else class="goodsTitle hover-pointer">
-            {{item.storeName}}
+            {{item.collectShopVO.name}}
           </div>
           <div class="goodsPrice">
-            <span v-if="params.type === 'GOODS'">{{item.price | unitPrice('￥')}}</span>
+            <span v-if="params.type === 'GOODS'">{{item.collectGoodsVO.price | unitPrice('￥')}}</span>
             <Tag color="error" v-if="item.selfOperated">商家自营</Tag>
           </div>
           <div class="goodsBuy">
-            <Button size="small" type="primary" @click="buynow(item.skuId, item.goodsId)" v-if="params.type === 'GOODS'">立即购买</Button>
-            <Button size="small" type="primary" @click="goShop(item.id)" v-else>店铺购买</Button>
-            <Button size="small" v-if="params.type === 'GOODS'" @click="cancel(item.skuId)">取消收藏</Button>
-            <Button size="small" v-if="params.type === 'SHOP'" @click="cancel(item.id)">取消收藏</Button>
+            <Button size="small" type="primary" @click="buynow(item.collectGoodsVO.skuId,item.collectGoodsVO.id)" v-if="params.type === 'GOODS'">立即购买</Button>
+            <Button size="small" type="primary" @click="goShop(item.merchantId)" v-else>店铺购买</Button>
+            <Button size="small" v-if="params.type === 'GOODS'" @click="cancel(item.goodsId)">取消收藏</Button>
+            <Button size="small" v-if="params.type === 'SHOP'" @click="cancel(item.merchantId)">取消收藏</Button>
           </div>
         </div>
       </template>
@@ -36,7 +36,9 @@
 </template>
 
 <script>
-import { collectList, cancelCollect } from '@/api/member.js'
+import { shopListAll, deleteCollectShop } from '@/api/mall-member/collect-shop'
+import { goodsListAll, deleteCollectGoods } from '@/api/mall-member/collect-goods'
+
 export default {
   name: 'Favorites',
   props: {
@@ -61,11 +63,27 @@ export default {
   methods: {
     getList () { // 获取收藏列表
       this.spinShow = true
-      collectList(this.params).then(res => {
-        this.spinShow = false
-        if (res.success) this.list = res.result.records;
-      })
+      if (this.params.type == 'GOODS') {
+        var params = this.axios.paramsHandler({});
+        goodsListAll(params).then(({data}) => {
+          if (data && data.code == '200') {
+            this.spinShow = false
+            this.list = data.data
+            console.log("this.list==1=",this.list)
+          }
+        });
+      } else if(this.params.type == 'SHOP') {
+        var params = this.axios.paramsHandler({});
+        shopListAll(params).then(({data}) => {
+          if (data && data.code == '200') {
+            this.spinShow = false
+            this.list = data.data
+            console.log("this.list==2=",this.list)
+          }
+        });
+      }
     },
+
     change (index) { // tab栏切换
       if (index === 0) { this.params.type = 'GOODS' }
       if (index === 1) { this.params.type = 'SHOP' }
@@ -77,18 +95,29 @@ export default {
         title: 'Title',
         content: `<p>确定取消收藏该${typeName}吗？</p>`,
         onOk: () => {
-          cancelCollect(this.params.type, id).then(res => {
-            if (res.success) {
-              this.getList();
-            }
-          })
+          if (this.params.type === 'GOODS') {
+            var postData = this.axios.paramsHandler({goodsId: id});
+            deleteCollectGoods(postData).then(({data}) => {
+              if (data && data.code == '200') {
+                this.getList();
+              }
+            });
+          } else if (this.params.type === 'SHOP'){
+            var postData = this.axios.paramsHandler({merchantId: id});
+            deleteCollectShop(postData).then(({data}) => {
+              if (data && data.code == '200') {
+                this.getList();
+              }
+            });
+          }
         }
       });
     },
-    buynow (skuId, goodsId) { // 跳转详情
+
+    buynow (skuId, id) { // 跳转详情
       let url = this.$router.resolve({
         path: '/goodsDetail',
-        query: {skuId, goodsId}
+        query: {skuId, id}
       })
       window.open(url.href, '_blank')
     },

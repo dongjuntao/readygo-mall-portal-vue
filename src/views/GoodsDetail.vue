@@ -14,8 +14,8 @@
             <router-link :to="'Merchant?id=' + goodsMsg.data.storeId">{{ goodsMsg.data.storeName }}</router-link>
           </span>
           <span @click="collect">
-            <Icon type="ios-heart" :color="storeCollected ? '#ed3f14' : '#666'" />
-            {{storeCollected ? '已收藏店铺' : '收藏店铺'}}
+            <Icon type="ios-heart" :color="isCollected ? '#ed3f14' : '#666'" />
+            {{isCollected ? '已收藏店铺' : '收藏店铺'}}
           </span>
           <!--
                先看下udesk merchantEuid 是否有值
@@ -45,7 +45,6 @@ import Search from "@/components/Search";
 import ShopHeader from "@/components/header/ShopHeader";
 import ShowGoods from "@/components/goodsDetail/ShowGoods";
 import ShowGoodsDetail from "@/components/goodsDetail/ShowGoodsDetail";
-// import { goodsSkuDetail } from "@/api/goods";
 import { getGoodsById } from '@/api/mall-goods/goods'
 
 import {
@@ -56,21 +55,26 @@ import {
 } from "@/api/member";
 import { getDetailById } from "@/api/shopentry";
 import { getIMDetail } from "@/api/common";
+import {deleteCollectGoods, saveCollectGoods} from '@/api/mall-member/collect-goods'
+import { saveCollectShop, deleteCollectShop, isCollected } from '@/api/mall-member/collect-shop'
+import {getUserInfo} from '@/utils/auth'
+
 export default {
   name: "GoodsDetail",
   beforeRouteEnter(to, from, next) {
     window.scrollTo(0, 0);
     next();
   },
-  created() {
-    this.getGoodsDetail();
+  async created() {
+    await this.getGoodsDetail();
     // this.getIMDetailMethods();
+    await this.collected();
   },
   data() {
     return {
       goodsMsg: {}, // 商品信息
       isLoading: false, // 加载状态
-      storeCollected: false, // 商品收藏
+      isCollected: false, // 店铺收藏
       storeMsg: {}, // 店铺信息
       IMLink: "",
     };
@@ -88,27 +92,13 @@ export default {
       }
     },
     // 获取商品详情
-    getGoodsDetail() {
+    async getGoodsDetail() {
       this.isLoading = true;
       const params = this.$route.query;
-      getGoodsById(params).then(({data}) => {
+      await getGoodsById(params).then(({data}) => {
         this.isLoading = false;
         if (data && data.code == '200') {
           this.goodsMsg = data;
-          // 判断是否收藏
-          // if (this.Cookies.getItem("userInfo")) {
-          //   isCollection("STORE", this.goodsMsg.data.storeId).then((res) => {
-          //     if (res.success && res.result) {
-          //       this.storeCollected = true;
-          //     }
-          //   });
-          // }
-          // 获取店铺信息
-          // getDetailById(this.goodsMsg.data.storeId).then((res) => {
-          //   if (res.success) {
-          //     this.storeMsg = res.result;
-          //   }
-          // });
         } else {
           this.$Message.error(data.message);
           this.$router.push("/");
@@ -119,21 +109,38 @@ export default {
     },
 
     async collect() {
-      // 收藏店铺
-      if (this.storeCollected) {
-        let cancel = await cancelCollect("STORE", this.goodsMsg.data.storeId);
-        if (cancel.success) {
-          this.$Message.success("已取消收藏");
-          this.storeCollected = false;
-        }
-      } else {
-        let collect = await collectGoods("STORE", this.goodsMsg.data.storeId);
-        if (collect.code === 200) {
-          this.storeCollected = true;
-          this.$Message.success("收藏店铺成功,可以前往个人中心我的收藏查看");
-        }
+      // 取消收藏店铺
+      if (this.isCollected) {
+        var postData = this.axios.paramsHandler({merchantId: this.goodsMsg.data.adminUserId});
+        deleteCollectShop(postData).then(({data}) => {
+          if (data && data.code == '200') {
+            this.isCollected = false
+          }
+        });
+      } else { //收藏店铺
+        var postData = this.axios.dataHandler({ merchantId: this.goodsMsg.data.adminUserId });
+        saveCollectShop(postData).then(({data}) => {
+          if (data && data.code == '200') {
+            this.isCollected = true
+          }
+        });
       }
     },
+
+    /**
+     * 判断是否已收藏店铺
+     */
+    async collected () {
+      // 用户登录才会判断是否收藏
+      if (getUserInfo(sessionStorage.getItem("userNameKey"))) {
+        var params = await this.axios.paramsHandler({ merchantId: this.goodsMsg.data.adminUserId });
+        isCollected(params).then(({data}) => {
+          if (data && data.code == '200') {
+            this.isCollected = data.data
+          }
+        });
+      }
+    }
   },
   watch: {
     "$route.query.skuId": function (val) {
@@ -150,7 +157,7 @@ export default {
     ShopHeader,
     ShowGoods,
     ShowGoodsDetail,
-  },
+  }
 };
 </script>
 <style scoped lang="scss">

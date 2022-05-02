@@ -173,9 +173,13 @@ import {
   collectGoods,
   isCollection,
   receiveCoupon,
-  cancelCollect,
-} from "@/api/member.js";
+  cancelCollect, goodsComment,
+} from '@/api/member.js'
 import { addCartGoods } from "@/api/cart.js";
+
+import { getUserInfo } from '@/utils/auth'
+import { saveCollectGoods, deleteCollectGoods, isCollected } from '@/api/mall-member/collect-goods'
+
 export default {
   name: "ShowGoods",
   props: {
@@ -279,70 +283,26 @@ export default {
           this.loading1 = false;
         });
     },
+
+    // 收藏商品 / 取消收藏
     async collect() {
-      // 收藏商品
+      // 取消收藏商品
       if (this.isCollected) {
-        let cancel = await cancelCollect("GOODS", this.goodsDetail.id);
-        if (cancel.success) {
-          this.$Message.success("取消收藏成功");
-          this.isCollected = false;
-        }
-      } else {
-        let collect = await collectGoods("GOODS", this.goodsDetail.id);
-        if (collect.code === 200) {
-          this.isCollected = true;
-          this.$Message.success("收藏商品成功,可以前往个人中心我的收藏查看");
-        }
+        var postData = this.axios.paramsHandler({goodsId: this.goodsDetail.id});
+        deleteCollectGoods(postData).then(({data}) => {
+          if (data && data.code == '200') {
+            this.isCollected = false
+          }
+        });
+      } else { //收藏商品
+        var postData = this.axios.dataHandler({goodsId: this.goodsDetail.id});
+        saveCollectGoods(postData).then(({data}) => {
+          if (data && data.code == '200') {
+            this.isCollected = true
+          }
+        });
       }
     },
-    // 格式化数据
-    // formatSku(list) {
-    //   let arr = [{}];
-    //   list.forEach((item, index) => {
-    //     item.specValues.forEach((spec, specIndex) => {
-    //       let name = spec.specName;
-    //       let values = {
-    //         value: spec.specValue,
-    //         quantity: item.quantity,
-    //       };
-    //       if (name === "images") {
-    //         return;
-    //       }
-    //
-    //       arr.forEach((arrItem, arrIndex) => {
-    //         if (
-    //           arrItem.name === name &&
-    //           arrItem.values &&
-    //           !arrItem.values.find((i) => i.value === values.value)
-    //         ) {
-    //           arrItem.values.push(values);
-    //         }
-    //
-    //         let keys = arr.map((key) => {
-    //           return key.name;
-    //         });
-    //         if (!keys.includes(name)) {
-    //           arr.push({
-    //             name: name,
-    //             values: [values],
-    //           });
-    //         }
-    //       });
-    //     });
-    //   });
-    //   arr.shift();
-    //   this.formatList = arr;
-    //
-    //   let cur = list.filter((i) => i.skuId === this.$route.query.skuId)[0];
-    //   if (cur) {
-    //     cur.specValues
-    //       .filter((i) => i.specName !== "images")
-    //       .forEach((value, _index) => {
-    //         this.currentSelceted[_index] = value.specValue;
-    //       });
-    //   }
-    //   this.skuList = list;
-    // },
 
     //处理规格参数
     handleSpecification(goodsSkuList) {
@@ -398,10 +358,11 @@ export default {
   },
   mounted() {
     // 用户登录才会判断是否收藏
-    if (this.Cookies.getItem("userInfo")) {
-      isCollection("GOODS", this.goodsDetail.id).then((res) => {
-        if (res.success && res.result) {
-          this.isCollected = true;
+    if (getUserInfo(sessionStorage.getItem("userNameKey"))) {
+      var params = this.axios.paramsHandler({goodsId: this.goodsDetail.id});
+      isCollected(params).then(({data}) => {
+        if (data && data.code == '200') {
+          this.isCollected = data.data
         }
       });
     }
