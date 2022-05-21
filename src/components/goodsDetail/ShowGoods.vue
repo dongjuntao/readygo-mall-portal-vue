@@ -146,18 +146,18 @@
             <div class="item-select-row">
               <InputNumber
                 :min="1"
-                :max="goodsDetail.quantity"
-                :disabled="goodsDetail.quantity === 0"
+                :max="currentSku.stock"
+                :disabled="currentSku.stock === 0"
                 v-model="count"
                 :precision="0.1"
               ></InputNumber>
-              <span class="inventory"> 库存{{ goodsDetail.quantity }}</span>
+              <span class="inventory"> 库存{{ currentSku.stock }}</span>
             </div>
           </div>
 
           <div class="add-buy-car">
-            <Button type="error" :loading="loading" :disabled="goodsDetail.quantity === 0" @click="addShoppingCartBtn">加入购物车</Button>
-            <Button type="warning" :loading="loading1" :disabled="goodsDetail.quantity === 0" @click="buyNow">立即购买</Button>
+            <Button type="error" :loading="loading" :disabled="currentSku.stock === 0" @click="addShoppingCartBtn">加入购物车</Button>
+            <Button type="warning" :loading="loading1" :disabled="currentSku.stock === 0" @click="buyNow">立即购买</Button>
           </div>
 
         </div>
@@ -179,6 +179,7 @@ import { addCartGoods } from "@/api/cart.js";
 
 import { getUserInfo } from '@/utils/auth'
 import { saveCollectGoods, deleteCollectGoods, isCollected } from '@/api/mall-member/collect-goods'
+import { saveCart } from '@/api/mall-cart/cart'
 
 export default {
   name: "ShowGoods",
@@ -235,28 +236,31 @@ export default {
       });
     },
 
+    //加入购物车
     addShoppingCartBtn() {
-      // 添加购物车
-      const params = {
-        num: this.count,
-        skuId: this.goodsDetail.id,
-      };
+      console.log("this.detail == ", this.detail)
+      var params = this.axios.paramsHandler({
+        merchantId: this.detail.data.adminUserId
+      });
+      var data = this.axios.dataHandler({
+        goodsId: this.detail.data.id,
+        goodsSkuId: this.currentSku.id,
+        count: this.count
+      });
       this.loading = true;
-      addCartGoods(params)
-        .then((res) => {
-          this.loading = false;
-          if (res.success) {
-            this.$router.push({
-              path: "/shoppingCart",
-              query: { detail: this.goodsDetail, count: this.count },
-            });
-          } else {
-            this.$Message.warning(res.message);
-          }
-        })
-        .catch(() => {
-          this.loading = false;
-        });
+      saveCart(params,data).then(({data}) => {
+        this.loading = false;
+        if (data && data.code == '200') {
+          this.$router.push({
+            path: "/shoppingCart",
+            query: { detail: this.goodsDetail, count: this.count },
+          });
+        } else {
+          this.$Message.warning(data.message);
+        }
+      }).catch(() => {
+        this.loading = false;
+      });
     },
     buyNow() {
       // 立即购买
@@ -372,6 +376,8 @@ export default {
     this.detail.data.images.split(",").forEach((image)=>{
       this.imgList.push({url:image})
     });
+
+    console.log("detail === ", this.detail)
 
     // this.formatSku(this.goodsSpecList);
     // this.promotion();

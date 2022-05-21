@@ -5,9 +5,7 @@
     <div class="width_1200 logo">
       <div>
         <router-link to="/"><img :src="$store.state.logoImg" /></router-link>
-        <div>
-          购物车(<span>{{ goodsTotal }}</span
-          >)
+        <div>购物车(<span>{{ goodsTotal }}</span>)
         </div>
       </div>
       <Search :showTag="false" :showLogo="false"></Search>
@@ -34,9 +32,7 @@
       <div class="cart-goods">
         <div class="cart-goods-title">
           <div class="width_60">
-            <Checkbox v-model="allChecked" @on-change="changeChecked(allChecked, 'all')"
-              >全选</Checkbox
-            >
+            <Checkbox v-model="allChecked" @on-change="changeChecked(allChecked, 0)">全选</Checkbox>
           </div>
           <div class="goods-title">商品</div>
           <div class="width_150">单价（元）</div>
@@ -48,125 +44,85 @@
           <p>购物车空空如也</p>
           <router-link to="/">去选购&gt;</router-link>
         </div>
-        <div
-          v-else
-          class="cart-goods-items"
-          v-for="(shop, index) in cartList"
-          :key="index"
-        >
+        <div v-else class="cart-goods-items" v-for="(shop, index) in cartList" :key="index">
           <div class="shop-name">
             <div>
-              <Checkbox
-                v-model="shop.checked"
-                @on-change="changeChecked(shop.checked, 'shop', shop.storeId)"
-              ></Checkbox>
-              <span class="go-shop-page" @click="goShopPage(shop.storeId)">{{
-                shop.storeName
-              }}</span>
+              <Checkbox v-model="shop.checked" @on-change="changeChecked(shop.checked, 1, shop.merchantId)"></Checkbox>
+              <span class="go-shop-page" @click="goShopPage(shop.merchantId)">{{ shop.merchantName }}</span>
             </div>
-            <span
-              class="shop-coupon"
-              v-if="shop.couponList.length"
-              :class="couponAvailable === index ? 'shop-coupon-show' : ''"
-              @click.stop="showCoupon(shop.id, index)"
-            >
-              <!-- 优惠券模态框 -->
-              <div v-if="couponAvailable === index">
-                <div
-                  class="coupon-item"
-                  v-for="(item, index) in shop.couponList"
-                  :key="index"
-                >
-                  <span v-if="item.couponType === 'PRICE'">￥{{ item.price }}</span>
-                  <span v-if="item.couponType === 'DISCOUNT'"
-                    >{{ item.couponDiscount }}折</span
-                  >
-                  <span>满{{ item.consumeThreshold }}元可用</span>
-                  <Button
-                    class="coupon-btn"
-                    size="small"
-                    type="primary"
-                    @click="receiveShopCoupon(item)"
-                    :disabled="item.disabled"
-                    >{{ item.disabled ? "已领取" : "领取" }}</Button
-                  >
-                </div>
-              </div>
-            </span>
-            <div class="promotion-notice">{{ shop.promotionNotice }}</div>
+            <!--优惠券，暂未做-->
+<!--            <span class="shop-coupon"-->
+<!--              v-if="shop.couponList.length"-->
+<!--              :class="couponAvailable === index ? 'shop-coupon-show' : ''"-->
+<!--              @click.stop="showCoupon(shop.id, index)">-->
+<!--              &lt;!&ndash; 优惠券模态框 &ndash;&gt;-->
+<!--              <div v-if="couponAvailable === index">-->
+<!--                <div-->
+<!--                  class="coupon-item"-->
+<!--                  v-for="(item, index) in shop.couponList"-->
+<!--                  :key="index"-->
+<!--                >-->
+<!--                  <span v-if="item.couponType === 'PRICE'">￥{{ item.price }}</span>-->
+<!--                  <span v-if="item.couponType === 'DISCOUNT'"-->
+<!--                    >{{ item.couponDiscount }}折</span-->
+<!--                  >-->
+<!--                  <span>满{{ item.consumeThreshold }}元可用</span>-->
+<!--                  <Button-->
+<!--                    class="coupon-btn"-->
+<!--                    size="small"-->
+<!--                    type="primary"-->
+<!--                    @click="receiveShopCoupon(item)"-->
+<!--                    :disabled="item.disabled"-->
+<!--                    >{{ item.disabled ? "已领取" : "领取" }}</Button-->
+<!--                  >-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </span>-->
+<!--            <div class="promotion-notice">{{ shop.promotionNotice }}</div>-->
           </div>
-          <template v-for="(goods, goodsIndex) in shop.skuList">
+          <template v-for="(goods, goodsIndex) in shop.cartGoodsList">
             <div class="goods-item" :key="goodsIndex">
               <div class="width_60">
-                <Checkbox
-                  v-model="goods.checked"
-                  @on-change="changeChecked(goods.checked, 'goods', goods.goodsSku.id)"
-                ></Checkbox>
+                <Checkbox v-model="goods.checked" @on-change="changeChecked(goods.checked, 2, goods.id)"></Checkbox>
               </div>
-              <div
-                class="goods-title"
-                @click="goGoodsDetail(goods.goodsSku.id, goods.goodsSku.goodsId)"
-              >
-                <img
-                  :src="
-                    goods.goodsSku.thumbnail ||
-                    '../assets/images/goodsDetail/item-detail-1.jpg'
-                  "
-                />
+              <div class="goods-title" @click="goGoodsDetail(goods.name, goods.name)">
+                <img :src="goods.image || '../assets/images/goodsDetail/item-detail-1.jpg'"/>
                 <div>
-                  <p>{{ goods.goodsSku.goodsName }}</p>
-                  <template v-for="(promotion, promotionIndex) in goods.promotions">
-                    <div
-                      class="promotion"
-                      :key="promotionIndex"
-                      v-if="promotion.promotionType === 'SECKILL'"
-                    >
-                      <span>秒杀</span>
-                      <promotion :time="promotion.endTime" type="cart"></promotion>
-                    </div>
-                  </template>
-                  <template v-for="(promotion, promotionIndex) in goods.promotions">
-                    <div
-                      class="promotion"
-                      :key="promotionIndex"
-                      v-if="promotion.promotionType === 'FULL_DISCOUNT'"
-                    >
-                      <span>满优惠活动</span>
-                      <promotion :time="promotion.endTime" type="cart"></promotion>
-                    </div>
-                  </template>
+                  <p>{{ goods.name }}</p>
+<!--                  <template v-for="(promotion, promotionIndex) in goods.promotions">-->
+<!--                    <div class="promotion" :key="promotionIndex" v-if="promotion.promotionType === 'SECKILL'">-->
+<!--                      <span>秒杀</span>-->
+<!--                      <promotion :time="promotion.endTime" type="cart"></promotion>-->
+<!--                    </div>-->
+<!--                  </template>-->
+<!--                  <template v-for="(promotion, promotionIndex) in goods.promotions">-->
+<!--                    <div class="promotion" :key="promotionIndex" v-if="promotion.promotionType === 'FULL_DISCOUNT'">-->
+<!--                      <span>满优惠活动</span>-->
+<!--                      <promotion :time="promotion.endTime" type="cart"></promotion>-->
+<!--                    </div>-->
+<!--                  </template>-->
                 </div>
               </div>
               <div class="width_150">
-                {{ goods.purchasePrice | unitPrice("￥") }}
+                {{ goods.sellingPrice | unitPrice("￥") }}
               </div>
               <div class="width_100">
                 <InputNumber
                   :min="1"
                   size="small"
-                  v-model="goods.num"
-                  @on-change="changeNum(goods.num, goods.goodsSku.id)"
+                  v-model="goods.count"
+                  @on-change="changeNum(goods.count, goods.id)"
                 ></InputNumber>
                 <div class="fontsize_12">
-                  {{ goods.goodsSku.quantity > 0 ? "有货" : "无货" }}
+                  {{ goods.stock > 0 ? "有货" : "无货" }}
                 </div>
               </div>
               <div class="width_150">
                 {{ goods.subTotal | unitPrice("￥") }}
               </div>
               <div class="width_100">
-                <span
-                  class="handle-btn"
-                  v-if="!goods.errorMessage"
-                  @click="delGoods(goods.goodsSku.id)"
-                  >删除</span
-                >
-                <span
-                  class="handle-btn"
-                  v-if="!goods.errorMessage"
-                  @click="collectGoods(goods.goodsSku.id)"
-                  >收藏</span
-                >
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="delGoods(goods.goodsSku.id)">删除</span>
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.goodsSku.id)">收藏</span>
               </div>
               <div class="error-goods" v-if="goods.errorMessage">
                 <div>{{ goods.errorMessage }}</div>
@@ -197,7 +153,7 @@
             </div>
             <div class="ml_20 total-price">
               总价（不含运费）:
-              <div>{{ priceDetailDTO.flowPrice | unitPrice("￥") }}</div>
+              <div>{{ totalPrice | unitPrice("￥") }}</div>
             </div>
             <div class="pay ml_20" @click="pay">去结算</div>
           </div>
@@ -212,8 +168,11 @@
 <script>
 import Promotion from "@/components/goodsDetail/Promotion";
 import Search from "@/components/Search";
-import * as APICart from "@/api/cart";
+// import * as APICart from "@/api/cart";
 import * as APIMember from "@/api/member";
+import { getCartList, setChecked, setCount } from '@/api/mall-cart/cart'
+import {updateIsDefault} from '@/api/mall-member/recipient-info'
+
 export default {
   name: "Cart",
   beforeRouteEnter(to, from, next) {
@@ -236,6 +195,7 @@ export default {
       couponList: [], // 优惠券列表
       priceDetailDTO: {}, // 价格明细
       skuList: [], // sku列表
+      totalPrice: 0 //总价
     };
   },
   methods: {
@@ -330,32 +290,71 @@ export default {
     showCoupon(storeId, index) {
       this.couponAvailable = index;
     },
+
+    //------------------以下原先-------------------------------
     // 设置购买数量
-    changeNum(val, id) {
-      console.log(val, id);
-      APICart.setCartGoodsNum({ skuId: id, num: val }).then((res) => {
-        console.log(res);
-        if (res.success) {
-          this.getCartList();
+    // changeNum(val, id) {
+    //   console.log(val, id);
+    //   APICart.setCartGoodsNum({ skuId: id, num: val }).then((res) => {
+    //     console.log(res);
+    //     if (res.success) {
+    //       this.getCartList();
+    //     }
+    //   });
+    // },
+    //------------------以上原先---以下新加----------------------------
+    changeNum(count, id) {
+      var params =  this.axios.paramsHandler({count: count, cartGoodsId: id });
+      setCount(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.$Message.success('设置成功');
+          this.getNewCartList();
+        } else {
+          this.$Message.error(data.message)
         }
       });
     },
-    // 设置商品选中状态
-    async changeChecked(status, type, id) {
-      const check = status ? 1 : 0;
-      if (type === "all") {
-        // 全选
-        await APICart.setCheckedAll({ checked: check });
-      } else if (type === "shop") {
-        // 选中店铺所有商品
-        await APICart.setCheckedSeller({ checked: check, storeId: id });
-      } else {
-        // 单个商品
-        await APICart.setCheckedGoods({ checked: check, skuId: id });
-      }
 
-      this.getCartList();
+    //------------------以下原先-------------------------------
+    // 设置商品选中状态
+    // async changeChecked(status, type, id) {
+    //   const check = status ? 1 : 0;
+    //   if (type === "all") {
+    //     // 全选
+    //     await APICart.setCheckedAll({ checked: check });
+    //   } else if (type === "shop") {
+    //     // 选中店铺所有商品
+    //     await APICart.setCheckedSeller({ checked: check, storeId: id });
+    //   } else {
+    //     // 单个商品
+    //     await APICart.setCheckedGoods({ checked: check, skuId: id });
+    //   }
+    //
+    //   this.getCartList();
+    //},
+    //------------------以上原先---以下新加----------------------------
+    changeChecked(checked, type, id) {
+      var params = "";
+      if (type == 0) {
+        // 全选
+         params =  this.axios.paramsHandler({type: type, checked: checked });
+      } else {
+        // 选中店铺所有商品 或 单独选中某个
+        params =  this.axios.paramsHandler({type: type, checked: checked, bizId: id });
+      }
+      setChecked(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.$Message.success('设置成功');
+          this.getNewCartList();
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
     },
+    //---------------------以上新加----------------------------
+
+
+
     // 领取优惠券
     async receiveShopCoupon(item) {
       let res = await APIMember.receiveCoupon(item.id);
@@ -366,44 +365,83 @@ export default {
         this.$Message.error(res.message);
       }
     },
+
+    //------------------以下原先-------------------------------
     // 购物车列表
-    async getCartList() {
-      this.loading = true;
-      try {
-        let res = await APICart.cartGoodsAll();
-        this.loading = false;
-        if (res.success) {
-          this.cartList = res.result.cartList;
-          this.priceDetailDTO = res.result.priceDetailDTO;
-          this.skuList = res.result.skuList;
-          this.checkedNum = 0;
-          let allChecked = true;
-          for (let k = 0; k < this.cartList.length; k++) {
-            let shop = this.cartList[k];
-            let list = await APIMember.couponList({ storeId: shop.storeId });
-            shop.couponList.push(...list.result.records);
+    // async getCartList() {
+    //   this.loading = true;
+    //   try {
+    //     let res = await APICart.cartGoodsAll();
+    //     this.loading = false;
+    //     if (res.success) {
+    //       this.cartList = res.result.cartList;
+    //       this.priceDetailDTO = res.result.priceDetailDTO;
+    //       this.skuList = res.result.skuList;
+    //       this.checkedNum = 0;
+    //       let allChecked = true;
+    //       for (let k = 0; k < this.cartList.length; k++) {
+    //         let shop = this.cartList[k];
+    //         let list = await APIMember.couponList({ storeId: shop.storeId });
+    //         shop.couponList.push(...list.result.records);
+    //       }
+    //       for (let i = 0; i < this.skuList.length; i++) {
+    //         if (this.skuList[i].checked) {
+    //           this.checkedNum += this.skuList[i].num;
+    //         } else {
+    //           allChecked = false;
+    //         }
+    //       }
+    //       this.$forceUpdate();
+    //       this.allChecked = allChecked;
+    //     }
+    //   } catch (error) {
+    //     this.loading = false;
+    //   }
+    // },
+
+    //------------------以上原先---以下新加----------------------------
+    getNewCartList() {
+      var params = this.axios.paramsHandler({})
+      getCartList(params).then(({data})=>{
+        if (data && data.code=='200') {
+          var result = data.data.cartMerchantList;
+          this.checkedNum = data.data.totalCount;
+          this.totalPrice = data.data.totalPrice;
+          this.cartList = result
+          var totalCount = 0;
+          for (var i=0; i<result.length; i++) {
+            totalCount += result[i].cartGoodsList.length;
+            var cartGoodsList = result[i].cartGoodsList;
+            var shopChecked = true; //该店铺全选中
+            for (var j=0; j<cartGoodsList.length; j++) {
+              if (!cartGoodsList[j].checked) {
+                shopChecked = false;
+              }
+            }
+            result[i].checked = shopChecked;
           }
-          for (let i = 0; i < this.skuList.length; i++) {
-            if (this.skuList[i].checked) {
-              this.checkedNum += this.skuList[i].num;
-            } else {
+          var allChecked = true; //所有都选中
+          for (var i=0; i<result.length; i++) {
+            if (!result[i].checked) {
               allChecked = false;
             }
           }
-          this.$forceUpdate();
           this.allChecked = allChecked;
+          this.goodsTotal = totalCount;
         }
-      } catch (error) {
-        this.loading = false;
-      }
-    },
+      });
+    }
+    //------------------以上新加-------------------------------
   },
   mounted() {
-    this.getCartList();
-    APICart.cartCount().then((res) => {
-      // 购物车商品数量
-      if (res.success) this.goodsTotal = res.result;
-    });
+    //--------------------------------------------------
+    // this.getCartList();
+    // APICart.cartCount().then((res) => {
+    //   // 购物车商品数量
+    //   if (res.success) this.goodsTotal = res.result;
+    // });
+    //-------------------以下新加-------------------------------
+    this.getNewCartList();
   },
 };
 </script>
