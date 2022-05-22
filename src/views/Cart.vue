@@ -5,7 +5,7 @@
     <div class="width_1200 logo">
       <div>
         <router-link to="/"><img :src="$store.state.logoImg" /></router-link>
-        <div>购物车(<span>{{ goodsTotal }}</span>)
+        <div>购物车(<span>{{ totalCount }}</span>)
         </div>
       </div>
       <Search :showTag="false" :showLogo="false"></Search>
@@ -121,12 +121,12 @@
                 {{ goods.subTotal | unitPrice("￥") }}
               </div>
               <div class="width_100">
-                <span class="handle-btn" v-if="!goods.errorMessage" @click="delGoods(goods.goodsSku.id)">删除</span>
-                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.goodsSku.id)">收藏</span>
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="deleteGoods(0,goods.id)">删除</span>
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.id)">收藏</span>
               </div>
               <div class="error-goods" v-if="goods.errorMessage">
                 <div>{{ goods.errorMessage }}</div>
-                <Button type="primary" @click="delGoods(goods.goodsSku.id)">删除</Button>
+                <Button type="primary" @click="delGoods(goods.id)">删除</Button>
               </div>
             </div>
           </template>
@@ -135,17 +135,14 @@
         <div class="cart-goods-footer">
           <div>
             <div class="width_60">
-              <Checkbox v-model="allChecked" @on-change="changeChecked(allChecked, 'all')"
-                >全选</Checkbox
-              >
+              <Checkbox v-model="allChecked" @on-change="changeChecked(allChecked, '0')">全选</Checkbox>
             </div>
-            <div class="width_100 handle-btn" @click="delGoods()">删除选中商品</div>
-            <!-- <div class="width_100 handle-btn" @click="collectGoods">移到我的收藏</div> -->
-            <div class="width_100 handle-btn" @click="clearCart">清空购物车</div>
+            <div class="width_100 handle-btn" @click="deleteGoods(1)">删除选中商品</div>
+            <div class="width_100 handle-btn" @click="deleteGoods(2)">清空购物车</div>
           </div>
           <div>
             <div class="selected-count">
-              已选择<span>{{ checkedNum }}</span
+              已选择<span>{{ checkedTotalCount }}</span
               >件商品
             </div>
             <div class="ml_20 save-price">
@@ -170,8 +167,7 @@ import Promotion from "@/components/goodsDetail/Promotion";
 import Search from "@/components/Search";
 // import * as APICart from "@/api/cart";
 import * as APIMember from "@/api/member";
-import { getCartList, setChecked, setCount } from '@/api/mall-cart/cart'
-import {updateIsDefault} from '@/api/mall-member/recipient-info'
+import { getCartList, setChecked, setCount, deleteCart } from '@/api/mall-cart/cart'
 
 export default {
   name: "Cart",
@@ -187,8 +183,8 @@ export default {
     return {
       couponAvailable: false, // 展示优惠券
       stepIndex: 0, // 当前处于哪一步，购物车==0，填写订单信息==1，成功提交订单==2
-      goodsTotal: 1, // 商品数量
-      checkedNum: 0, // 选中数量
+      totalCount: 0, // 商品数量
+      checkedTotalCount: 0, // 选中数量
       allChecked: false, // 全选
       loading: false, // 加载状态
       cartList: [], // 购物车列表
@@ -231,53 +227,57 @@ export default {
         onCancel: () => {},
       });
     },
+
+    //-------------------------------------------------
     // 删除商品
-    delGoods(id) {
-      const idArr = [];
-      if (!id) {
-        const list = this.cartList;
-        list.forEach((shop) => {
-          shop.skuList.forEach((goods) => {
-            if(goods.checked) {
-              idArr.push(goods.goodsSku.id);
-            }
-          });
-        });
-      } else {
-        idArr.push(id);
-      }
-      this.$Modal.confirm({
-        title: "删除",
-        content: "<p>确定要删除该商品吗？</p>",
-        onOk: () => {
-          APICart.delCartGoods({ skuIds: idArr.toString() }).then((res) => {
-            if (res.success) {
-              this.$Message.success("删除成功");
-              this.getCartList();
-            } else {
-              this.$Message.error(res.message);
-            }
-          });
-        },
-      });
-    },
-    // 清空购物车
-    clearCart() {
-      this.$Modal.confirm({
-        title: "提示",
-        content: "<p>确定要清空购物车吗？清空后不可恢复</p>",
-        onOk: () => {
-          APICart.clearCart().then((res) => {
-            if (res.success) {
-              this.$Message.success("清空购物车成功");
-              this.getCartList();
-            } else {
-              this.$Message.error(res.message);
-            }
-          });
-        },
-      });
-    },
+    // delGoods(id) {
+    //   const idArr = [];
+    //   if (!id) {
+    //     const list = this.cartList;
+    //     list.forEach((shop) => {
+    //       shop.skuList.forEach((goods) => {
+    //         if(goods.checked) {
+    //           idArr.push(goods.goodsSku.id);
+    //         }
+    //       });
+    //     });
+    //   } else {
+    //     idArr.push(id);
+    //   }
+    //   this.$Modal.confirm({
+    //     title: "删除",
+    //     content: "<p>确定要删除该商品吗？</p>",
+    //     onOk: () => {
+    //       APICart.delCartGoods({ skuIds: idArr.toString() }).then((res) => {
+    //         if (res.success) {
+    //           this.$Message.success("删除成功");
+    //           this.getCartList();
+    //         } else {
+    //           this.$Message.error(res.message);
+    //         }
+    //       });
+    //     },
+    //   });
+    // },
+    // // 清空购物车
+    // clearCart() {
+    //   this.$Modal.confirm({
+    //     title: "提示",
+    //     content: "<p>确定要清空购物车吗？清空后不可恢复</p>",
+    //     onOk: () => {
+    //       APICart.clearCart().then((res) => {
+    //         if (res.success) {
+    //           this.$Message.success("清空购物车成功");
+    //           this.getCartList();
+    //         } else {
+    //           this.$Message.error(res.message);
+    //         }
+    //       });
+    //     },
+    //   });
+    // },
+    //-------------------------------------------------
+
     // 跳转支付页面
     pay() {
       if (this.checkedNum) {
@@ -291,18 +291,36 @@ export default {
       this.couponAvailable = index;
     },
 
-    //------------------以下原先-------------------------------
-    // 设置购买数量
-    // changeNum(val, id) {
-    //   console.log(val, id);
-    //   APICart.setCartGoodsNum({ skuId: id, num: val }).then((res) => {
-    //     console.log(res);
-    //     if (res.success) {
-    //       this.getCartList();
-    //     }
-    //   });
-    // },
-    //------------------以上原先---以下新加----------------------------
+    // 领取优惠券
+    async receiveShopCoupon(item) {
+      let res = await APIMember.receiveCoupon(item.id);
+      if (res.success) {
+        this.$set(item, "disabled", true);
+        this.$Message.success("领取成功");
+      } else {
+        this.$Message.error(res.message);
+      }
+    },
+
+    //---------------------以下新加----------------------------
+    //type 0：单个删除 1：选中删除 2：清空购物车
+    deleteGoods(type, id) {
+      var params;
+      if (type == 0) {
+        params = this.axios.paramsHandler({ deleteType: type, cartGoodsId: id });
+      } else if (type == 1 || type == 2) {
+        params = this.axios.paramsHandler({ deleteType: type });
+      }
+      deleteCart(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.$Message.success('删除成功');
+          this.getNewCartList();
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+
     changeNum(count, id) {
       var params =  this.axios.paramsHandler({count: count, cartGoodsId: id });
       setCount(params).then(({data}) => {
@@ -315,29 +333,11 @@ export default {
       });
     },
 
-    //------------------以下原先-------------------------------
-    // 设置商品选中状态
-    // async changeChecked(status, type, id) {
-    //   const check = status ? 1 : 0;
-    //   if (type === "all") {
-    //     // 全选
-    //     await APICart.setCheckedAll({ checked: check });
-    //   } else if (type === "shop") {
-    //     // 选中店铺所有商品
-    //     await APICart.setCheckedSeller({ checked: check, storeId: id });
-    //   } else {
-    //     // 单个商品
-    //     await APICart.setCheckedGoods({ checked: check, skuId: id });
-    //   }
-    //
-    //   this.getCartList();
-    //},
-    //------------------以上原先---以下新加----------------------------
     changeChecked(checked, type, id) {
       var params = "";
       if (type == 0) {
         // 全选
-         params =  this.axios.paramsHandler({type: type, checked: checked });
+        params =  this.axios.paramsHandler({type: type, checked: checked });
       } else {
         // 选中店铺所有商品 或 单独选中某个
         params =  this.axios.paramsHandler({type: type, checked: checked, bizId: id });
@@ -351,83 +351,40 @@ export default {
         }
       });
     },
-    //---------------------以上新加----------------------------
-
-
-
-    // 领取优惠券
-    async receiveShopCoupon(item) {
-      let res = await APIMember.receiveCoupon(item.id);
-      if (res.success) {
-        this.$set(item, "disabled", true);
-        this.$Message.success("领取成功");
-      } else {
-        this.$Message.error(res.message);
-      }
-    },
-
-    //------------------以下原先-------------------------------
-    // 购物车列表
-    // async getCartList() {
-    //   this.loading = true;
-    //   try {
-    //     let res = await APICart.cartGoodsAll();
-    //     this.loading = false;
-    //     if (res.success) {
-    //       this.cartList = res.result.cartList;
-    //       this.priceDetailDTO = res.result.priceDetailDTO;
-    //       this.skuList = res.result.skuList;
-    //       this.checkedNum = 0;
-    //       let allChecked = true;
-    //       for (let k = 0; k < this.cartList.length; k++) {
-    //         let shop = this.cartList[k];
-    //         let list = await APIMember.couponList({ storeId: shop.storeId });
-    //         shop.couponList.push(...list.result.records);
-    //       }
-    //       for (let i = 0; i < this.skuList.length; i++) {
-    //         if (this.skuList[i].checked) {
-    //           this.checkedNum += this.skuList[i].num;
-    //         } else {
-    //           allChecked = false;
-    //         }
-    //       }
-    //       this.$forceUpdate();
-    //       this.allChecked = allChecked;
-    //     }
-    //   } catch (error) {
-    //     this.loading = false;
-    //   }
-    // },
-
-    //------------------以上原先---以下新加----------------------------
     getNewCartList() {
       var params = this.axios.paramsHandler({})
       getCartList(params).then(({data})=>{
         if (data && data.code=='200') {
           var result = data.data.cartMerchantList;
-          this.checkedNum = data.data.totalCount;
-          this.totalPrice = data.data.totalPrice;
-          this.cartList = result
-          var totalCount = 0;
-          for (var i=0; i<result.length; i++) {
-            totalCount += result[i].cartGoodsList.length;
-            var cartGoodsList = result[i].cartGoodsList;
-            var shopChecked = true; //该店铺全选中
-            for (var j=0; j<cartGoodsList.length; j++) {
-              if (!cartGoodsList[j].checked) {
-                shopChecked = false;
+          if (result) {
+            this.checkedTotalCount = data.data.checkedTotalCount;
+            this.totalPrice = data.data.totalPrice;
+            this.totalCount = data.data.totalCount;
+            this.cartList = result
+            for (var i=0; i<result.length; i++) {
+              var cartGoodsList = result[i].cartGoodsList;
+              var shopChecked = true; //该店铺全选中
+              for (var j=0; j<cartGoodsList.length; j++) {
+                if (!cartGoodsList[j].checked) {
+                  shopChecked = false;
+                }
+              }
+              result[i].checked = shopChecked;
+            }
+            var allChecked = true; //所有都选中
+            for (var i=0; i<result.length; i++) {
+              if (!result[i].checked) {
+                allChecked = false;
               }
             }
-            result[i].checked = shopChecked;
+            this.allChecked = allChecked;
+          }else {
+            this.checkedTotalCount = data.data.checkedTotalCount;
+            this.totalPrice = data.data.totalPrice;
+            this.totalCount = data.data.totalCount;
+            this.cartList = []
+            this.allChecked = false;
           }
-          var allChecked = true; //所有都选中
-          for (var i=0; i<result.length; i++) {
-            if (!result[i].checked) {
-              allChecked = false;
-            }
-          }
-          this.allChecked = allChecked;
-          this.goodsTotal = totalCount;
         }
       });
     }

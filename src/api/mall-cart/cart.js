@@ -45,3 +45,14 @@ export function setCount(params) {
     params: params
   })
 }
+/**
+ * 删除 清空 购物车
+ */
+export function deleteCart(params) {
+  return request({
+    url: prefix+'/cart/deleteCart',
+    method: 'DELETE',
+    params: params
+  })
+}
+
