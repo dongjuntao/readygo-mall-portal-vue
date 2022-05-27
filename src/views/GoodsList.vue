@@ -180,6 +180,7 @@ export default {
     // 获取商品列表
     getGoodsList () {
       this.loading = true;
+      console.log("this.params ==",this.params)
       getGoodsList(this.params).then(({data}) => {
           this.loading = false;
           console.log("data===============================",data)

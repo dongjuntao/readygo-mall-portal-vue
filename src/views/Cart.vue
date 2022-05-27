@@ -141,15 +141,9 @@
             <div class="width_100 handle-btn" @click="deleteGoods(2)">清空购物车</div>
           </div>
           <div>
-            <div class="selected-count">
-              已选择<span>{{ checkedTotalCount }}</span
-              >件商品
-            </div>
-            <div class="ml_20 save-price">
-              已节省<span>{{ priceDetailDTO.discountPrice | unitPrice("￥") }}</span>
-            </div>
-            <div class="ml_20 total-price">
-              总价（不含运费）:
+            <div class="selected-count">已选择<span>{{ checkedTotalCount }}</span>件商品</div>
+            <div class="ml_20 save-price">已节省<span>{{ priceDetailDTO.discountPrice | unitPrice("￥") }}</span></div>
+            <div class="ml_20 total-price">总价（不含运费）:
               <div>{{ totalPrice | unitPrice("￥") }}</div>
             </div>
             <div class="pay ml_20" @click="pay">去结算</div>
@@ -228,55 +222,6 @@ export default {
       });
     },
 
-    //-------------------------------------------------
-    // 删除商品
-    // delGoods(id) {
-    //   const idArr = [];
-    //   if (!id) {
-    //     const list = this.cartList;
-    //     list.forEach((shop) => {
-    //       shop.skuList.forEach((goods) => {
-    //         if(goods.checked) {
-    //           idArr.push(goods.goodsSku.id);
-    //         }
-    //       });
-    //     });
-    //   } else {
-    //     idArr.push(id);
-    //   }
-    //   this.$Modal.confirm({
-    //     title: "删除",
-    //     content: "<p>确定要删除该商品吗？</p>",
-    //     onOk: () => {
-    //       APICart.delCartGoods({ skuIds: idArr.toString() }).then((res) => {
-    //         if (res.success) {
-    //           this.$Message.success("删除成功");
-    //           this.getCartList();
-    //         } else {
-    //           this.$Message.error(res.message);
-    //         }
-    //       });
-    //     },
-    //   });
-    // },
-    // // 清空购物车
-    // clearCart() {
-    //   this.$Modal.confirm({
-    //     title: "提示",
-    //     content: "<p>确定要清空购物车吗？清空后不可恢复</p>",
-    //     onOk: () => {
-    //       APICart.clearCart().then((res) => {
-    //         if (res.success) {
-    //           this.$Message.success("清空购物车成功");
-    //           this.getCartList();
-    //         } else {
-    //           this.$Message.error(res.message);
-    //         }
-    //       });
-    //     },
-    //   });
-    // },
-    //-------------------------------------------------
 
     // 跳转支付页面
     pay() {
@@ -306,18 +251,34 @@ export default {
     //type 0：单个删除 1：选中删除 2：清空购物车
     deleteGoods(type, id) {
       var params;
+      var content;
+      var title;
       if (type == 0) {
         params = this.axios.paramsHandler({ deleteType: type, cartGoodsId: id });
-      } else if (type == 1 || type == 2) {
+        content = "是否确认要删除该商品？"
+        title = "删除商品"
+      } else if (type == 1) {
         params = this.axios.paramsHandler({ deleteType: type });
+        content = "是否确认要删除选中的商品？"
+        title = "删除选中商品"
+      } else {
+        params = this.axios.paramsHandler({ deleteType: type });
+        content = "是否确认要清空购物车？"
+        title = "清空购物车"
       }
-      deleteCart(params).then(({data}) => {
-        if (data && data.code === "200") {
-          this.$Message.success('删除成功');
-          this.getNewCartList();
-        } else {
-          this.$Message.error(data.message)
-        }
+      this.$Modal.confirm({
+        title: title,
+        content: "<p>"+content+"</p>",
+        onOk: () => {
+          deleteCart(params).then(({data}) => {
+            if (data && data.code === "200") {
+              this.$Message.success('删除成功');
+              this.getNewCartList();
+            } else {
+              this.$Message.error(data.message)
+            }
+          });
+        },
       });
     },
 
@@ -333,6 +294,7 @@ export default {
       });
     },
 
+    //设置选中
     changeChecked(checked, type, id) {
       var params = "";
       if (type == 0) {
@@ -351,6 +313,7 @@ export default {
         }
       });
     },
+    //获取购物车列表
     getNewCartList() {
       var params = this.axios.paramsHandler({})
       getCartList(params).then(({data})=>{

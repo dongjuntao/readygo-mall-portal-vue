@@ -37,7 +37,7 @@
         <li v-if="$route.name !== 'Cart'" style="position:relative;">
           <i class="cart-badge" v-show="Number(cartNum)">{{cartNum < 100 ? cartNum : '99'}}</i>
           <Dropdown placement="bottom-start">
-            <router-link to="/cart" target="_blank">
+            <router-link to="/cart" target="_blank" rel="opener">
               <span @mouseenter="getCartList"><Icon size="18" type="ios-cart-outline"></Icon>购物车</span>
             </router-link>
             <DropdownMenu slot="list">

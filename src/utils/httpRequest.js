@@ -2,6 +2,7 @@ import axios from 'axios'
 import router from '@/router'
 import qs from 'qs'
 import merge from 'lodash/merge'
+import { Message } from 'view-design';
 import { clearLoginInfo, getToken } from '@/utils/auth'
 
 const http = axios.create({
@@ -29,7 +30,7 @@ http.interceptors.request.use(config => {
  */
 http.interceptors.response.use(response => {
   if(response.data && response.data.code === "401") {
-    this.$Message.error(response.data.message);
+    Message.error(response.data.message);
     clearLoginInfo()
     router.push({ name: 'login'})
   }
