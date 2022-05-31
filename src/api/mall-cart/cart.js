@@ -56,3 +56,13 @@ export function deleteCart(params) {
   })
 }
 
+/**
+ * 结算页购物车列表信息
+ */
+export function getPayCartList(params) {
+  return request({
+    url: prefix+'/cart/payInfo/goods',
+    method: 'get',
+    params: params
+  })
+}

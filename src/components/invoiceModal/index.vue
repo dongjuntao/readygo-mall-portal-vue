@@ -8,31 +8,37 @@
       <div class="nav-content">
         <Form :model="invoiceForm" ref="form" label-position="left" :rules="ruleInline" :label-width="110">
           <FormItem label="发票类型">
-            <RadioGroup v-model="invoice" type="button" button-style="solid">
-              <Radio @on-change="changeInvoice" :label="1">电子普通发票</Radio>
-              <Radio :label="2" :disabled="true">增值税专用发票</Radio>
+            <RadioGroup v-model="invoiceForm.invoiceType" type="button" button-style="solid">
+              <Radio @on-change="changeInvoiceType" :label="1">电子普通发票</Radio>
+              <Radio :label="2" :disabled="true" title="抱歉，暂不支持，敬请期待">增值税专用发票</Radio>
             </RadioGroup>
           </FormItem>
           <FormItem label="发票抬头">
-            <RadioGroup v-model="type" @on-change="changeInvoice" type="button" button-style="solid">
-              <Radio :label="1">个人</Radio>
-              <Radio :label="2">单位</Radio>
+            <RadioGroup v-model="invoiceForm.invoiceTitleType" @on-change="changeInvoiceTitleType" type="button" button-style="solid">
+              <Radio :label="0">个人</Radio>
+              <Radio :label="1">单位</Radio>
             </RadioGroup>
           </FormItem>
-          <FormItem label="个人名称" v-if="type === 1" prop="receiptTitle">
-            <i-input v-model="invoiceForm.receiptTitle"></i-input>
+          <FormItem label="个人名称" v-if="invoiceForm.invoiceTitleType === 0" prop="invoiceTitle">
+            <i-input v-model="invoiceForm.invoiceTitle"></i-input>
           </FormItem>
-          <FormItem label="单位名称" v-if="type === 2" prop="receiptTitle">
-            <i-input v-model="invoiceForm.receiptTitle"></i-input>
+          <FormItem label="单位名称" v-if="invoiceForm.invoiceTitleType === 1" prop="invoiceTitle">
+            <i-input v-model="invoiceForm.invoiceTitle"></i-input>
           </FormItem>
-          <FormItem label="纳税人识别号" v-if="type === 2" prop="taxpayerId">
-            <i-input v-model="invoiceForm.taxpayerId"></i-input>
+          <FormItem label="纳税人识别号" v-if="invoiceForm.invoiceTitleType === 1" prop="taxNumber">
+            <i-input v-model="invoiceForm.taxNumber"></i-input>
           </FormItem>
           <FormItem label="发票内容">
-            <RadioGroup v-model="invoiceForm.receiptContent" type="button" button-style="solid">
-              <Radio label="商品明细">商品明细</Radio>
-              <Radio label="商品类别">商品类别</Radio>
+            <RadioGroup v-model="invoiceForm.invoiceContent" type="button" button-style="solid">
+              <Radio :label="0">商品明细</Radio>
+              <Radio :label="1">商品类别</Radio>
             </RadioGroup>
+          </FormItem>
+          <FormItem label="收票人手机" prop="mobile">
+            <i-input v-model="invoiceForm.mobile" maxlength="20"></i-input>
+          </FormItem>
+          <FormItem label="收票人邮箱" prop="email">
+            <i-input v-model="invoiceForm.email" maxlength="50"></i-input>
           </FormItem>
         </Form>
         <div style="text-align: center">
@@ -44,24 +50,26 @@
   </div>
 </template>
 <script>
-import { receiptSelect } from '@/api/cart.js';
 import { TINumber } from '@/plugins/RegExp.js';
+import { saveOrUpdateCartInvoice } from '@/api/mall-cart/cart_invoice'
 export default {
   name: 'invoiceModal',
   data () {
     return {
-      invoice: 1, // 发票类型
       invoiceAvailable: false, // 模态框显隐
       loading: false, // 提交状态
       invoiceForm: {
-        // 普票表单
-        receiptTitle: '', // 发票抬头
-        taxpayerId: '', // 纳税人识别号
-        receiptContent: '商品明细' // 发票内容
+        id: 0,
+        invoiceType: 1, // 发票类型
+        invoiceTitleType: 0, //发票抬头类型 0 个人 1 单位
+        invoiceTitle: '', // 发票抬头
+        taxNumber: '', // 纳税人识别号
+        invoiceContent: 0, // 发票内容
+        mobile: '', //收票人手机
+        email: '' //收票人邮箱
       },
-      type: 1, // 1 个人 2 单位
       ruleInline: {
-        taxpayerId: [
+        taxNumber: [
           { required: true, message: '请填写纳税人识别号' },
           { pattern: TINumber, message: '请填写正确的纳税人识别号' }
         ]
@@ -74,12 +82,6 @@ export default {
     invoiceData: {
       handler (val) {
         this.invoiceForm = { ...val };
-
-        if (val.taxpayerId) {
-          this.type = 2;
-        } else {
-          this.type = 1;
-        }
       },
       deep: true,
       immeadite: true
@@ -87,57 +89,84 @@ export default {
   },
   methods: {
     /**
+     * 选择发票类型
+     */
+    changeInvoiceType (val) {
+      this.$nextTick(() => {
+        this.invoiceForm.invoiceType = val;
+      });
+    },
+    /**
      *  选择发票抬头
      */
-    changeInvoice (val) {
+    changeInvoiceTitleType (val) {
       this.$nextTick(() => {
-        this.type = val;
+        this.invoiceForm.invoiceTitleType = val;
       });
     },
 
     /**
      *  保存判断
      */
-    save () {
-      let flage = true;
-
+    saveValidate () {
+      let flag = true;
       // 保存分为两种类型，个人以及企业
-      const { receiptTitle } = JSON.parse(
+      const { invoiceTitle, mobile, email } = JSON.parse(
         JSON.stringify(this.invoiceForm)
       );
       // 判断是否填写发票抬头
-      if (!receiptTitle) {
+      if (!invoiceTitle) {
         this.$Message.error('请填写发票抬头!');
-        flage = false;
+        flag = false;
         return false;
       }
-
-      if (this.type === 2) {
+      // 判断是否填写收票人手机号
+      if (!mobile) {
+        this.$Message.error('请填写收票人手机!');
+        flag = false;
+        return false;
+      }
+      // 判断是否填写收票人邮箱
+      if (!email) {
+        this.$Message.error('请填写收票人邮箱!');
+        flag = false;
+        return false;
+      }
+      if (this.invoiceForm.invoiceTitleType === 1) {
         this.$refs.form.validate((valid) => {
           if (!valid) {
-            flage = false;
+            flag = false;
           }
         });
       } else {
-        delete this.invoiceForm.taxpayerId;
+        this.invoiceForm.taxNumber = "";
       }
-
-      return flage;
+      return flag;
     },
     // 保存发票信息
     async submit () {
-      if (this.save()) {
+      if (this.saveValidate()) {
         this.loading = true;
-        let submit = {
-          way: this.$route.query.way,
-          ...this.invoiceForm
-        };
-        let receipt = await receiptSelect(submit);
-        if (receipt.success) {
-          this.$emit('change', true);
-        }
+        var postData =  this.axios.dataHandler({
+          id: this.invoiceForm.id,
+          invoiceType: this.invoiceForm.invoiceType,
+          invoiceTitleType: this.invoiceForm.invoiceTitleType,
+          invoiceTitle: this.invoiceForm.invoiceTitle,
+          taxNumber: this.invoiceForm.taxNumber,
+          invoiceContent: this.invoiceForm.invoiceContent,
+          mobile: this.invoiceForm.mobile,
+          email: this.invoiceForm.email
+        });
 
-        this.loading = false;
+        console.log("postData==",postData)
+        saveOrUpdateCartInvoice(postData).then(({data}) => {
+          if (data && data.code === "200") {
+            this.$emit('change', true);
+          } else {
+            this.$Message.error(data.message)
+          }
+          this.loading = false;
+        });
       }
     }
   }

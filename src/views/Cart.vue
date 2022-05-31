@@ -34,7 +34,7 @@
           <div class="width_60">
             <Checkbox v-model="allChecked" @on-change="changeChecked(allChecked, 0)">全选</Checkbox>
           </div>
-          <div class="goods-title">商品</div>
+          <div class="goods-title">商品信息</div>
           <div class="width_150">单价（元）</div>
           <div class="width_100">数量</div>
           <div class="width_150">小计</div>
@@ -85,7 +85,7 @@
               <div class="width_60">
                 <Checkbox v-model="goods.checked" @on-change="changeChecked(goods.checked, 2, goods.id)"></Checkbox>
               </div>
-              <div class="goods-title" @click="goGoodsDetail(goods.name, goods.name)">
+              <div class="goods-title" @click="goGoodsDetail(goods.goodsSkuId, goods.goodsId)">
                 <img :src="goods.image || '../assets/images/goodsDetail/item-detail-1.jpg'"/>
                 <div>
                   <p>{{ goods.name }}</p>
@@ -122,7 +122,7 @@
               </div>
               <div class="width_100">
                 <span class="handle-btn" v-if="!goods.errorMessage" @click="deleteGoods(0,goods.id)">删除</span>
-                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.id)">收藏</span>
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.goodsId)">收藏</span>
               </div>
               <div class="error-goods" v-if="goods.errorMessage">
                 <div>{{ goods.errorMessage }}</div>
@@ -159,9 +159,10 @@
 <script>
 import Promotion from "@/components/goodsDetail/Promotion";
 import Search from "@/components/Search";
-// import * as APICart from "@/api/cart";
+
 import * as APIMember from "@/api/member";
 import { getCartList, setChecked, setCount, deleteCart } from '@/api/mall-cart/cart'
+import { saveCollectGoods } from '@/api/mall-member/collect-goods'
 
 export default {
   name: "Cart",
@@ -190,10 +191,10 @@ export default {
   },
   methods: {
     // 跳转商品详情
-    goGoodsDetail(skuId, goodsId) {
+    goGoodsDetail(goodsSkuId, goodsId) {
       let routeUrl = this.$router.resolve({
         path: "/goodsDetail",
-        query: { skuId, goodsId },
+        query: { skuId: goodsSkuId, id: goodsId },
       });
       window.open(routeUrl.href, "_blank");
     },
@@ -205,27 +206,10 @@ export default {
       });
       window.open(routeUrl.href, "_blank");
     },
-    // 收藏商品
-    collectGoods(id) {
-      this.$Modal.confirm({
-        title: "收藏",
-        content: "<p>商品收藏后可在个人中心我的收藏查看</p>",
-        onOk: () => {
-          APIMember.collectGoods("GOODS", id).then((res) => {
-            if (res.success) {
-              this.$Message.success("收藏商品成功");
-              this.getCartList();
-            }
-          });
-        },
-        onCancel: () => {},
-      });
-    },
-
 
     // 跳转支付页面
     pay() {
-      if (this.checkedNum) {
+      if (this.checkedTotalCount) {
         this.$router.push({ path: "/pay", query: { way: "CART" } });
       } else {
         this.$Message.warning("请至少选择一件商品");
@@ -248,6 +232,25 @@ export default {
     },
 
     //---------------------以下新加----------------------------
+    // 收藏商品
+    collectGoods(id) {
+      var postData = this.axios.dataHandler({ goodsId: id });
+      this.$Modal.confirm({
+        title: "收藏商品",
+        content: "<p>商品收藏后可在个人中心我的收藏查看</p>",
+        onOk: () => {
+          saveCollectGoods(postData).then(({data}) => {
+            if (data && data.code=='200') {
+              this.$Message.success("收藏商品成功");
+            } else {
+              this.$Message.warning(data.message);
+            }
+          });
+        },
+        onCancel: () => {},
+      });
+    },
+
     //type 0：单个删除 1：选中删除 2：清空购物车
     deleteGoods(type, id) {
       var params;
@@ -282,6 +285,7 @@ export default {
       });
     },
 
+    //设置数量
     changeNum(count, id) {
       var params =  this.axios.paramsHandler({count: count, cartGoodsId: id });
       setCount(params).then(({data}) => {
@@ -351,16 +355,8 @@ export default {
         }
       });
     }
-    //------------------以上新加-------------------------------
   },
   mounted() {
-    //--------------------------------------------------
-    // this.getCartList();
-    // APICart.cartCount().then((res) => {
-    //   // 购物车商品数量
-    //   if (res.success) this.goodsTotal = res.result;
-    // });
-    //-------------------以下新加-------------------------------
     this.getNewCartList();
   },
 };

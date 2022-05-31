@@ -43,10 +43,10 @@
             <div>
               <span>{{ item.name }}</span>
               <Tag class="ml_10" v-if="item.isDefault" color="red">默认</Tag>
-              <Tag class="ml_10" v-if="item.alias" color="warning">{{ item.alias }} </Tag>
+              <Tag class="ml_10" v-if="item.addressAlias" color="warning">{{ item.addressAlias }} </Tag>
             </div>
             <div>{{ item.mobile }}</div>
-            <div>{{ item.consigneeAddressPath | unitAddress }} {{ item.detail }}</div>
+            <div>{{ item.regionNames }} {{ item.detailAddress }}</div>
             <div class="edit-btn" v-show="showEditBtn === index">
               <span @click.stop="editAddress(item.id)">修改</span>
               <span class="ml_10" v-if="!item.isDefault" @click.stop="delAddress(item)"
@@ -80,31 +80,36 @@
           <span>商品信息</span>
           <span @click="$router.push('/cart')">返回购物车</span>
         </div>
+
+        <div style="border-bottom: 2px solid #b2d1ff;">
+          <span class="goods-title" style="margin-left: 300px;">商品信息</span>
+          <span class="width_150" style="margin-left: 500px;">单价（元）</span>
+          <span class="width_100" style="margin-left: 50px;">数量</span>
+          <span class="width_150" style="margin-left: 100px;">小计</span>
+        </div>
+
         <div class="goods-msg" v-for="(shop, shopIndex) in goodsList" :key="shopIndex">
           <div class="shop-name">
             <span>
-              <span class="hover-color" @click="goShopPage(shop.storeId)">{{
-                shop.storeName
-              }}</span
-              >&nbsp;&nbsp;
+              <span class="hover-color" @click="goShopPage(shop.merchantId)">商家： {{shop.merchantName}}</span>&nbsp;&nbsp;
             </span>
           </div>
+
           <div class="goods-list">
             <div
               class="goods-item"
-              v-for="(goods, goodsIndex) in shop.skuList"
+              v-for="(goods, goodsIndex) in shop.payGoodsList"
               :key="goodsIndex"
             >
               <span
                 class="hover-color"
-                @click="goGoodsDetail(goods.goodsSku.id, goods.goodsSku.goodsId)"
+                @click="goGoodsDetail(goods.goodsSkuId, goods.goodsId)"
               >
-                <img :src="goods.goodsSku.thumbnail" alt="" />
-                <span style="vertical-align: top">{{ goods.goodsSku.goodsName }}</span>
+                <img :src="goods.image" alt="" />
+                <span style="vertical-align: top">{{ goods.name }}</span>
               </span>
-              <span class="goods-price">{{ goods.purchasePrice | unitPrice("￥") }}</span>
-              <span>x{{ goods.num }}</span>
-              <span>{{ goods.goodsSku.quantity > 0 ? "有货" : "无货" }}</span>
+              <span class="goods-price">{{ goods.sellingPrice | unitPrice("￥") }}</span>
+              <span>x{{ goods.count }}</span>
               <span class="goods-price">{{ goods.subTotal | unitPrice("￥") }}</span>
             </div>
           </div>
@@ -134,8 +139,10 @@
           >
         </div>
         <div class="inovice-content">
-          <span>{{ invoiceData.receiptTitle }}</span>
-          <span>{{ invoiceData.receiptContent }}</span>
+          <span>{{ invoiceData.invoiceTitle }}</span>
+          <span v-if="invoiceData.invoiceContent == 0">{{'商品明细'}}</span>
+          <span v-else-if="invoiceData.invoiceContent == 1">{{'商品类别'}}</span>
+          <span v-else>无需发票</span>
           <span @click="editInvoice">编辑</span>
         </div>
       </div>
@@ -185,8 +192,8 @@
       <!-- 订单价格 -->
       <div class="order-price">
         <div>
-          <span>{{ totalNum }}件商品，总商品金额：</span
-          ><span>{{ priceDetailDTO.goodsPrice | unitPrice("￥") }}</span>
+          <span>{{ totalCount }}件商品，总商品金额：</span
+          ><span>{{ totalPrice | unitPrice("￥") }}</span>
         </div>
         <div v-if="priceDetailDTO.freightPrice > 0">
           <span>运费：</span
@@ -217,8 +224,8 @@
     <div class="order-footer width_1200">
       <div class="pay ml_20" @click="pay">提交订单</div>
       <div class="pay-address" v-if="addressList.length">
-        配送至：{{ selectedAddress.consigneeAddressPath | unitAddress }}
-        {{ selectedAddress.detail }}&nbsp;&nbsp;收货人：{{
+        配送至：{{ selectedAddress.regionNames }}
+        {{ selectedAddress.detailAddress }}&nbsp;&nbsp;收货人：{{
           selectedAddress.name
         }}&nbsp;&nbsp;{{ selectedAddress.mobile }}
       </div>
@@ -235,6 +242,10 @@
 import invoiceModal from "@/components/invoiceModal";
 import addressManage from "@/components/addressManage";
 import { memberAddress, delMemberAddress } from "@/api/address";
+
+import { getPayRecipientInfoList, selectAddress } from '@/api/mall-cart/cart_recipient_info'
+import { getCartInvoiceByParams } from '@/api/mall-cart/cart_invoice'
+
 import {
   cartGoodsPay,
   createTrade,
@@ -244,6 +255,7 @@ import {
 } from "@/api/cart";
 import { canUseCouponList } from "@/api/member.js";
 
+import { getPayCartList } from '@/api/mall-cart/cart'
 export default {
   name: "Pay",
   components: { invoiceModal, addressManage },
@@ -253,16 +265,16 @@ export default {
       invoiceAvailable: false, // 发票编辑按钮
       showEditBtn: "", // 鼠标移入显示编辑按钮
       orderMark: "", // 订单备注
-      invoiceData: {
-        // 发票数据
-        receiptTitle: "个人",
-        receiptContent: "不开发票",
+      invoiceData: { // 发票信息
+        invoiceTitle: "个人",
+        invoiceContent: "不开发票",
       },
       addressList: [], // 地址列表
       selectedAddress: {}, // 所选地址
       goodsList: [], // 商品列表
       priceDetailDTO: {}, // 商品价格
-      totalNum: 0, // 购买数量
+      totalCount: 0, // 购买数量
+      totalPrice:0, //总价格
       addrId: "", // 编辑地址传入的id
       moreAddr: false, // 更多地址
       canUseCouponNum: 0, // 可用优惠券数量
@@ -273,8 +285,73 @@ export default {
   },
   mounted() {
     this.init();
+
+    //新加的-------------------
+    this.getRecipientAddress();//收货人信息
+    this.getPayCartList(); //商家及商品信息
+    this.getInvoiceData(); //发票信息
   },
   methods: {
+
+    //新加的---------------------------------------------start-------------------------------------
+    //商家及商品信息
+    getPayCartList() {
+      var params =  this.axios.paramsHandler({});
+      getPayCartList(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.totalPrice = data.data.totalPrice;
+          this.totalCount = data.data.totalCount
+          this.goodsList = data.data.payMerchantList;
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+    //获取收货地址
+    getRecipientAddress() {
+      var params =  this.axios.paramsHandler({});
+      getPayRecipientInfoList(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.addressList = data.data;
+          this.addressList.forEach((e, index) => {
+            if (e.selected) {
+              this.selectedAddress = e;
+            }
+            if (e.id === this.selectedAddress.id && index > 2) {
+              this.moreAddr = true;
+            }
+          });
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+    selectAddress(item) {
+      var params =  this.axios.paramsHandler({ recipientInfoId: item.id});
+      selectAddress(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.$Message.success("选择收货人信息成功")
+          this.getRecipientAddress();
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+    //查询发票信息
+    getInvoiceData() {
+      var params =  this.axios.paramsHandler({});
+      getCartInvoiceByParams(params).then(({data}) => {
+        if (data && data.code === "200") {
+          if (data.data) {
+            this.invoiceData = data.data
+          }
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+    //新加的-----------------------------------------------end---------------------------------------
+
     // 初始化数据
     init() {
       this.getGoodsDetail();
@@ -283,19 +360,19 @@ export default {
       // 跳转地址管理页面
       this.$router.push("/home/MyAddress");
     },
-    getAddress() {
-      // 获取收货地址列表
-      memberAddress().then((res) => {
-        if (res.success) {
-          this.addressList = res.result.records;
-          this.addressList.forEach((e, index) => {
-            if (e.id === this.selectedAddress.id && index > 2) {
-              this.moreAddr = true;
-            }
-          });
-        }
-      });
-    },
+    // getAddress() {
+    //   // 获取收货地址列表
+    //   memberAddress().then((res) => {
+    //     if (res.success) {
+    //       this.addressList = res.result.records;
+    //       this.addressList.forEach((e, index) => {
+    //         if (e.id === this.selectedAddress.id && index > 2) {
+    //           this.moreAddr = true;
+    //         }
+    //       });
+    //     }
+    //   });
+    // },
     getGoodsDetail() {
       // 订单商品详情
       this.$Spin.show();
@@ -398,20 +475,20 @@ export default {
         }
       });
     },
-    selectAddress(item) {
-      // 选择地址
-      let params = {
-        way: this.$route.query.way,
-        shippingAddressId: item.id,
-      };
-      selectAddr(params).then((res) => {
-        if (res.success) {
-          this.$Message.success("选择收货地址成功");
-          this.selectedAddress = item;
-          this.getGoodsDetail();
-        }
-      });
-    },
+    // selectAddress(item) {
+    //   // 选择地址
+    //   let params = {
+    //     way: this.$route.query.way,
+    //     shippingAddressId: item.id,
+    //   };
+    //   selectAddr(params).then((res) => {
+    //     if (res.success) {
+    //       this.$Message.success("选择收货地址成功");
+    //       this.selectedAddress = item;
+    //       this.getGoodsDetail();
+    //     }
+    //   });
+    // },
     editAddress(id) {
       // 编辑地址
       this.addrId = id;
@@ -464,14 +541,14 @@ export default {
         if (res.success) this.init();
       });
     },
+    // 编辑发票信息
     editInvoice() {
-      // 编辑发票信息
       this.$refs.invModal.invoiceAvailable = true;
     },
+    // 获取发票信息
     getInvMsg(item) {
-      // 获取发票信息
       if (item) {
-        this.init();
+        this.getInvoiceData()
         this.$refs.invModal.invoiceAvailable = false;
       }
     },
@@ -537,6 +614,7 @@ export default {
 <style scoped lang="scss">
 @import "../../assets/styles/coupon.scss";
 .goods-msg {
+  border-bottom: 1px dashed red;
   overflow: hidden;
 }
 /** logo start */
@@ -695,10 +773,12 @@ export default {
 
 /** 购买商品列表 start */
 .shop-name {
+  margin-top: 10px;
   display: flex;
   justify-content: space-between;
 
   > span:nth-child(1) {
+    font-size: 13px;
     font-weight: bold;
 
     .ivu-icon {
@@ -902,9 +982,11 @@ export default {
   justify-content: space-between;
   border-bottom: 1px solid #dddddd;
   height: 40px;
+  color: #0f1011;
+  font-weight: bold;
 
   span:nth-child(1) {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   span:nth-child(2) {
