@@ -3,12 +3,10 @@
     <div class="nav-con">
       <div class="all-categories hover-pointer" @mouseenter="showFirstList = true" @mouseleave="showFirstList = false">全部商品分类</div>
       <ul class="nav-item" v-if="showNavBar">
-        <li
-          class ="nav-lis"
+        <li class ="nav-lis"
           v-for="(item, index) in navList.list"
           :key="index"
-          @click="linkTo(item.url)"
-        >
+          @click="linkTo(item.linkUrl)">
           {{ item.name }}
         </li>
       </ul>
@@ -105,7 +103,14 @@ export default {
     }
   },
   methods: {
-    getCategoryLst () { // 获取分类数据
+
+    //跳转页面
+    linkTo(linkUrl) {
+      this.$router.push(linkUrl);
+    },
+
+    // 获取分类数据
+    getCategoryLst () {
       if (this.hover) return false;
       getCategoryAndMergedCategory(0).then(({data}) => {
         if (data && data.code == '200') {

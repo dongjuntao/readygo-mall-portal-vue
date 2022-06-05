@@ -6,12 +6,12 @@
       <li v-for="(item, index) in list" class="coupon-item" :key="index">
         <div class="c-left">
           <div>
-            <span v-if="item.couponType === 'PRICE'" class="fontsize_12 global_color">￥<span class="price">{{item.price | unitPrice}}</span></span>
-            <span v-if="item.couponType === 'DISCOUNT'" class="fontsize_12 global_color"><span class="price">{{item.discount}}</span>折</span>
-            <span class="describe">满{{item.consumeThreshold}}元可用</span>
+            <span v-if="item.type === 0" class="fontsize_12 global_color">￥<span class="price">{{item.discountAmount | unitPrice}}</span></span>
+            <span v-if="item.type === 1" class="fontsize_12 global_color"><span class="price">{{item.discountAmount}}</span>折</span>
+            <span class="describe">满{{item.minConsumption}}元可用</span>
           </div>
-          <p>使用范围：{{useScope(item.scopeType, item.storeName)}}</p>
-          <p>有效期：{{item.endTime}}</p>
+          <p>使用范围：{{useScope(item.source, item.useScope, item.merchantName)}}</p>
+          <p>有效期至：{{item.validPeriodEnd | formatDateTime }}</p>
         </div>
         <b></b>
         <a class="c-right" :class="{'canot-use':params.memberCouponStatus !== 'NEW'}" @click="go(item)">立即使用</a>
@@ -22,7 +22,7 @@
     <Page :total="total" @on-change="changePageNum"
       class="pageration"
       @on-page-size-change="changePageSize"
-      :page-size="params.pageSize"
+      :page-size="pageSize"
       show-total
       show-sizer>
     </Page>
@@ -31,7 +31,8 @@
 </template>
 
 <script>
-import { memberCouponList } from '@/api/member.js';
+
+import { getReceivedCouponList } from '@/api/mall-member/coupon-received'
 export default {
   name: 'Coupons',
   data () {
@@ -41,37 +42,46 @@ export default {
         '已使用',
         '已过期'
       ],
-      statusList: ['NEW', 'USED', 'EXPIRE'], // 优惠券状态
+      statusList: [0, 1, 2], // 优惠券状态
       loading: false, // 列表加载状态
       params: { // 请求参数
         pageNumber: 1,
         pageSize: 10,
         memberCouponStatus: 'NEW'
       },
+      pageNo: 1,
+      pageSize: 10,
+      useStatus: 0,
       total: 0, // 优惠券总数
       list: [] // 优惠券列表
     };
   },
   methods: {
+
     getList () { // 获取优惠券列表
-      this.loading = true
-      memberCouponList(this.params).then(res => {
+      this.loading = true;
+      var params = this.axios.paramsHandler({
+        useStatus: this.useStatus,
+        pageNo: this.pageNo,
+        pageSize: this.pageSize
+      })
+      getReceivedCouponList(params).then(({data}) => {
         this.loading = false
-        if (res.success) {
-          this.list = res.result.records
-          this.total = res.result.total
+        if (data && data.code == '200') {
+          this.list = data.data
+          console.log("this.list.length= ==", this.list)
+          this.total = data.data.totalCount
         }
       })
     },
     // 切换优惠券状态
     change (index) {
-      this.params.memberCouponStatus = this.statusList[index]
-      this.params.pageNumber = 1;
+      this.useStatus = this.statusList[index]
+      this.pageNo = 1;
       this.getList()
     },
     go (item) { // 根据使用条件跳转商品列表页面
-      if (this.params.memberCouponStatus !== 'NEW') return;
-
+      if (this.memberCouponStatus !== 0) return;
       if (item.storeId !== 'platform') {
         this.$router.push({path: '/merchant', query: {id: item.storeId}})
       } else {
@@ -84,33 +94,34 @@ export default {
     },
 
     changePageNum (val) { // 分页改变页码
-      this.params.pageNumber = val;
+      this.pageNo = val;
       this.getList()
     },
 
     changePageSize (val) { // 分页改变页数
-      this.params.pageNumber = 1;
-      this.params.pageSize = val;
+      this.pageNo = 1;
+      this.pageSize = val;
       this.getList()
     },
 
-    useScope (type, storeName) { // 根据字段返回 优惠券适用范围
+    // 优惠券可用范围【改造】
+    useScope (type, useScope, merchantName) {
       let shop = '平台';
       let goods = '全部商品'
-      if (storeName !== 'platform') shop = storeName
-      switch (type) {
-        case 'ALL':
+      if (type != 0) shop = merchantName //不等于0，说明是商家的优惠券
+      switch (useScope) {
+        case 0:
           goods = '全部商品'
           break;
-        case 'PORTION_GOODS':
-          goods = '部分商品'
+        case 1:
+          goods = '指定分类商品'
           break;
-        case 'PORTION_GOODS_CATEGORY':
-          goods = '部分分类商品'
+        case 2:
+          goods = '指定商品'
           break;
       }
-      return `${shop}${goods}可用`
-    }
+      return `${shop} ${goods} 可用`
+    },
   },
   mounted () {
     this.getList()

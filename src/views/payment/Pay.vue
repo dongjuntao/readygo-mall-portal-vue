@@ -156,19 +156,12 @@
           <li v-for="(item, index) in couponList" class="coupon-item" :key="index">
             <div class="c-left">
               <div>
-                <span v-if="item.couponType === 'PRICE'" class="fontsize_12 global_color"
-                  >￥<span class="price">{{ item.price | unitPrice }}</span></span
-                >
-                <span
-                  v-if="item.couponType === 'DISCOUNT'"
-                  class="fontsize_12 global_color"
-                  ><span class="price">{{ item.discount }}</span
-                  >折</span
-                >
-                <span class="describe">满{{ item.consumeThreshold }}元可用</span>
+                <span v-if="item.type === 0" class="fontsize_12 global_color">￥<span class="price">{{ item.discountAmount | unitPrice }}</span></span>
+                <span v-if="item.type === 1" class="fontsize_12 global_color"><span class="price">{{ item.discountAmount }}</span>折</span>
+                <span class="describe">满{{ item.minConsumption }}元可用</span>
               </div>
-              <p>使用范围：{{ useScope(item.scopeType) }}</p>
-              <p>有效期：{{ item.endTime }}</p>
+              <p>使用范围：{{ useScope(item.source, item.useScope, item.merchantName) }}</p>
+              <p>有效期至：{{ item.validPeriodEnd | formatDateTime }}</p>
             </div>
             <img
               class="used"
@@ -199,23 +192,22 @@
           <span>运费：</span
           ><span>{{ priceDetailDTO.freightPrice | unitPrice("￥") }}</span>
         </div>
-        <div v-if="priceDetailDTO.discountPrice > 0">
-          <span>优惠金额：</span
-          ><span>-{{ priceDetailDTO.discountPrice | unitPrice("￥") }}</span>
-        </div>
-        <div v-if="priceDetailDTO.couponPrice > 0">
+        <div v-if="discountPrice > 0">
           <span>优惠券金额：</span
-          ><span>-{{ priceDetailDTO.couponPrice | unitPrice("￥") }}</span>
+          ><span>-{{ discountPrice | unitPrice("￥") }}</span>
         </div>
-
-        <div v-if="$route.query.way === 'POINTS'">
-          <span>应付积分：</span
-          ><span class="actrual-price">{{ priceDetailDTO.payPoint }}</span>
-        </div>
-        <div v-else>
+<!--        <div v-if="priceDetailDTO.discountPrice > 0">-->
+<!--          <span>优惠金额：</span-->
+<!--          ><span>-{{ priceDetailDTO.discountPrice | unitPrice("￥") }}</span>-->
+<!--        </div>-->
+<!--        <div v-if="$route.query.way === 'POINTS'">-->
+<!--          <span>应付积分：</span-->
+<!--          ><span class="actrual-price">{{ priceDetailDTO.payPoint }}</span>-->
+<!--        </div>-->
+        <div>
           <span>应付金额：</span
           ><span class="actrual-price">{{
-            priceDetailDTO.flowPrice | unitPrice("￥")
+            finalPrice ? finalPrice : totalPrice | unitPrice("￥")
           }}</span>
         </div>
       </div>
@@ -245,17 +237,19 @@ import { memberAddress, delMemberAddress } from "@/api/address";
 
 import { getPayRecipientInfoList, selectAddress } from '@/api/mall-cart/cart_recipient_info'
 import { getCartInvoiceByParams } from '@/api/mall-cart/cart_invoice'
+import {getReceivedCouponList, getReceivedCouponListAll} from '@/api/mall-member/coupon-received'
 
 import {
   cartGoodsPay,
   createTrade,
   selectAddr,
-  selectCoupon,
+  // selectCoupon,
   couponNum,
 } from "@/api/cart";
 import { canUseCouponList } from "@/api/member.js";
 
 import { getPayCartList } from '@/api/mall-cart/cart'
+import {getSelected, selectCoupon} from '@/api/mall-cart/cart_coupon_selected'
 export default {
   name: "Pay",
   components: { invoiceModal, addressManage },
@@ -275,6 +269,8 @@ export default {
       priceDetailDTO: {}, // 商品价格
       totalCount: 0, // 购买数量
       totalPrice:0, //总价格
+      finalPrice:0, //最终价格
+      discountPrice: 0, //优惠券价格
       addrId: "", // 编辑地址传入的id
       moreAddr: false, // 更多地址
       canUseCouponNum: 0, // 可用优惠券数量
@@ -284,12 +280,13 @@ export default {
     };
   },
   mounted() {
-    this.init();
+    // this.init();
 
     //新加的-------------------
     this.getRecipientAddress();//收货人信息
     this.getPayCartList(); //商家及商品信息
     this.getInvoiceData(); //发票信息
+    this.getCouponList(); //优惠券信息
   },
   methods: {
 
@@ -300,7 +297,9 @@ export default {
       getPayCartList(params).then(({data}) => {
         if (data && data.code === "200") {
           this.totalPrice = data.data.totalPrice;
-          this.totalCount = data.data.totalCount
+          this.totalCount = data.data.totalCount;
+          this.finalPrice = data.data.finalPrice;
+          this.discountPrice = data.data.discountPrice;
           this.goodsList = data.data.payMerchantList;
         } else {
           this.$Message.error(data.message)
@@ -350,6 +349,49 @@ export default {
         }
       });
     },
+    //查询我的优惠券
+    getCouponList() {
+      var params = this.axios.paramsHandler({
+        useStatus: 0 //查询未使用的发票
+      })
+      getReceivedCouponListAll(params).then(({data}) => {
+        if (data && data.code === "200") {
+          if (data.data) {
+            this.couponList = data.data
+            this.getSelected();
+          }
+        } else {
+          this.$Message.error(data.message)
+        }
+      });
+    },
+    //立即使用 / 放弃使用 优惠券
+    useCoupon(id, used) {
+      var data = this.axios.dataHandler({receivedCouponId: id})
+      var params = this.axios.paramsHandler({use: used})
+      selectCoupon(data, params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.getCouponList();
+        } else {
+          this.$Message.error(data.message)
+        }
+      })
+    },
+    //获取已选择的优惠券信息
+    getSelected() {
+      var params = this.axios.paramsHandler({})
+      getSelected(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.usedCouponId = []
+         if (data.data && data.data.length>0) {
+           this.usedCouponId.push(data.data[0].receivedCouponId);
+         }
+          this.getPayCartList()
+        } else {
+          this.$Message.error(data.message)
+        }
+      })
+    },
     //新加的-----------------------------------------------end---------------------------------------
 
     // 初始化数据
@@ -360,19 +402,7 @@ export default {
       // 跳转地址管理页面
       this.$router.push("/home/MyAddress");
     },
-    // getAddress() {
-    //   // 获取收货地址列表
-    //   memberAddress().then((res) => {
-    //     if (res.success) {
-    //       this.addressList = res.result.records;
-    //       this.addressList.forEach((e, index) => {
-    //         if (e.id === this.selectedAddress.id && index > 2) {
-    //           this.moreAddr = true;
-    //         }
-    //       });
-    //     }
-    //   });
-    // },
+
     getGoodsDetail() {
       // 订单商品详情
       this.$Spin.show();
@@ -475,20 +505,7 @@ export default {
         }
       });
     },
-    // selectAddress(item) {
-    //   // 选择地址
-    //   let params = {
-    //     way: this.$route.query.way,
-    //     shippingAddressId: item.id,
-    //   };
-    //   selectAddr(params).then((res) => {
-    //     if (res.success) {
-    //       this.$Message.success("选择收货地址成功");
-    //       this.selectedAddress = item;
-    //       this.getGoodsDetail();
-    //     }
-    //   });
-    // },
+
     editAddress(id) {
       // 编辑地址
       this.addrId = id;
@@ -530,17 +547,17 @@ export default {
       });
       window.open(routeUrl.href, "_blank");
     },
-    useCoupon(id, used) {
-      // 使用优惠券
-      let params = {
-        way: this.$route.query.way,
-        memberCouponId: id,
-        used: used, // true 为使用， false为弃用
-      };
-      selectCoupon(params).then((res) => {
-        if (res.success) this.init();
-      });
-    },
+    // useCoupon(id, used) {
+    //   // 使用优惠券
+    //   let params = {
+    //     way: this.$route.query.way,
+    //     memberCouponId: id,
+    //     used: used, // true 为使用， false为弃用
+    //   };
+    //   selectCoupon(params).then((res) => {
+    //     if (res.success) this.init();
+    //   });
+    // },
     // 编辑发票信息
     editInvoice() {
       this.$refs.invModal.invoiceAvailable = true;
@@ -591,22 +608,24 @@ export default {
           this.$Spin.hide();
         });
     },
-    // 优惠券可用范围
-    useScope(type) {
-      let goods = "全部商品";
-      switch (type) {
-        case "ALL":
-          goods = "全部商品";
+    // 优惠券可用范围【改造】
+    useScope (type, useScope, merchantName) {
+      let shop = '平台';
+      let goods = '全部商品'
+      if (type != 0) shop = merchantName //不等于0，说明是商家的优惠券
+      switch (useScope) {
+        case 0:
+          goods = '全部商品'
           break;
-        case "PORTION_GOODS":
-          goods = "部分商品";
+        case 1:
+          goods = '指定分类商品'
           break;
-        case "PORTION_GOODS_CATEGORY":
-          goods = "部分分类商品";
+        case 2:
+          goods = '指定商品'
           break;
       }
-      return `${goods}可用`;
-    },
+      return `${shop} ${goods} 可用`
+    }
   },
 };
 </script>

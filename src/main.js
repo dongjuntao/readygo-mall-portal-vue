@@ -11,6 +11,7 @@ import storage from '@/plugins/storage';
 import {InstallAll} from '@/components/global.js';
 // 全局加载scss
 import './assets/styles/global.scss';
+import Moment from 'moment'
 
 // 挂载全局
 import httpRequest from '@/utils/httpRequest'
@@ -34,6 +35,18 @@ router.beforeEach((to, from, next) => {
 router.afterEach(route => {
   ViewUI.LoadingBar.finish();
 });
+
+// 定义全局时间戳过滤器
+Vue.filter('formatDate', function(value) {
+  if (value != null) {
+    return Moment(value).format('YYYY-MM-DD')
+  }
+})
+Vue.filter('formatDateTime', function(value) {
+  if (value != null) {
+    return Moment(value).format('YYYY-MM-DD HH:mm:ss')
+  }
+})
 
 Vue.prototype.linkTo = function (url) {
   if (url.substr(0, 1) === '/') { // 非外部链接，没有origin，只有路由地址
