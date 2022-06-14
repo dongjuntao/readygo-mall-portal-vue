@@ -1,12 +1,12 @@
 import request from '@/utils/httpRequest'
-const prefix = "/mall-cart";
+const prefix = "/mall-order";
 
 /**
  * 结算页收货人信息
  */
 export function getPayRecipientInfoList(params) {
   return request({
-    url: prefix+'/cartRecipientInfo/payInfo',
+    url: prefix+'/recipientInfo/payInfo',
     method: 'get',
     params: params
   })
@@ -17,7 +17,7 @@ export function getPayRecipientInfoList(params) {
  */
 export function selectAddress(params) {
   return request({
-    url: prefix+'/cartRecipientInfo/selectAddress',
+    url: prefix+'/recipientInfo/selectAddress',
     method: 'POST',
     params: params
   })

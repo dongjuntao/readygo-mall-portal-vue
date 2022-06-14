@@ -51,7 +51,7 @@
 </template>
 <script>
 import { TINumber } from '@/plugins/RegExp.js';
-import { saveOrUpdateCartInvoice } from '@/api/mall-cart/cart_invoice'
+import { saveOrUpdateCartInvoice } from '@/api/mall-order/invoice'
 export default {
   name: 'invoiceModal',
   data () {

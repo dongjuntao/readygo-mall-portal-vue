@@ -234,22 +234,16 @@
 import invoiceModal from "@/components/invoiceModal";
 import addressManage from "@/components/addressManage";
 import { memberAddress, delMemberAddress } from "@/api/address";
-
-import { getPayRecipientInfoList, selectAddress } from '@/api/mall-cart/cart_recipient_info'
-import { getCartInvoiceByParams } from '@/api/mall-cart/cart_invoice'
-import {getReceivedCouponList, getReceivedCouponListAll} from '@/api/mall-member/coupon-received'
-
-import {
-  cartGoodsPay,
-  createTrade,
-  selectAddr,
-  // selectCoupon,
-  couponNum,
-} from "@/api/cart";
+import { cartGoodsPay, createTrade, selectAddr, couponNum} from "@/api/cart";
 import { canUseCouponList } from "@/api/member.js";
 
-import { getPayCartList } from '@/api/mall-cart/cart'
-import {getSelected, selectCoupon} from '@/api/mall-cart/cart_coupon_selected'
+import { getReceivedCouponList, getReceivedCouponListAll } from '@/api/mall-member/coupon-received'
+import { getPayRecipientInfoList, selectAddress } from '@/api/mall-order/recipient_info'
+import { getInvoiceByParams } from '@/api/mall-order/invoice'
+// import { getPayCartList } from '@/api/mall-cart/cart'
+import { getPayInfoGoods } from '@/api/mall-order/pay-info-goods'
+import { getSelected, selectCoupon } from '@/api/mall-order/coupon_selected'
+
 export default {
   name: "Pay",
   components: { invoiceModal, addressManage },
@@ -294,7 +288,8 @@ export default {
     //商家及商品信息
     getPayCartList() {
       var params =  this.axios.paramsHandler({});
-      getPayCartList(params).then(({data}) => {
+      getPayInfoGoods(params).then(({data}) => {
+          // getPayCartList(params).then(({data}) => {
         if (data && data.code === "200") {
           this.totalPrice = data.data.totalPrice;
           this.totalCount = data.data.totalCount;
@@ -339,7 +334,7 @@ export default {
     //查询发票信息
     getInvoiceData() {
       var params =  this.axios.paramsHandler({});
-      getCartInvoiceByParams(params).then(({data}) => {
+      getInvoiceByParams(params).then(({data}) => {
         if (data && data.code === "200") {
           if (data.data) {
             this.invoiceData = data.data

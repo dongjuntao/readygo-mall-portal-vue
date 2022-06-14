@@ -1,12 +1,12 @@
 import request from '@/utils/httpRequest'
-const prefix = "/mall-cart";
+const prefix = "/mall-order";
 
 /**
  * 添加发票信息
  */
 export function saveOrUpdateCartInvoice(data) {
   return request({
-    url: prefix+'/cartInvoice/saveOrUpdate',
+    url: prefix+'/invoice/saveOrUpdate',
     method: 'POST',
     data: data
   })
@@ -15,9 +15,9 @@ export function saveOrUpdateCartInvoice(data) {
 /**
  * 查询发票信息
  */
-export function getCartInvoiceByParams(params) {
+export function getInvoiceByParams(params) {
   return request({
-    url: prefix+'/cartInvoice/getCartInvoiceByParams',
+    url: prefix+'/invoice/getInvoiceByParams',
     method: 'GET',
     params: params
   })
@@ -26,9 +26,9 @@ export function getCartInvoiceByParams(params) {
 /**
  * 删除发票信息
  */
-export function deleteCartInvoice(params) {
+export function deleteInvoice(params) {
   return request({
-    url: prefix+'/cartInvoice/deleteCartInvoiceById',
+    url: prefix+'/invoice/deleteInvoiceById',
     method: 'DELETE',
     params: params
   })
