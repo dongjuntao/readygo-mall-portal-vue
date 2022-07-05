@@ -188,10 +188,10 @@
           <span>{{ totalCount }}件商品，总商品金额：</span
           ><span>{{ totalPrice | unitPrice("￥") }}</span>
         </div>
-        <div v-if="priceDetailDTO.freightPrice > 0">
-          <span>运费：</span
-          ><span>{{ priceDetailDTO.freightPrice | unitPrice("￥") }}</span>
-        </div>
+<!--        <div v-if="priceDetailDTO.freightPrice > 0">-->
+<!--          <span>运费：</span-->
+<!--          ><span>{{ priceDetailDTO.freightPrice | unitPrice("￥") }}</span>-->
+<!--        </div>-->
         <div v-if="discountPrice > 0">
           <span>优惠券金额：</span
           ><span>-{{ discountPrice | unitPrice("￥") }}</span>
@@ -234,13 +234,14 @@
 import invoiceModal from "@/components/invoiceModal";
 import addressManage from "@/components/addressManage";
 import { memberAddress, delMemberAddress } from "@/api/address";
-import { cartGoodsPay, createTrade, selectAddr, couponNum} from "@/api/cart";
+import { cartGoodsPay, selectAddr, couponNum} from "@/api/cart";
 import { canUseCouponList } from "@/api/member.js";
 
 import { getReceivedCouponList, getReceivedCouponListAll } from '@/api/mall-member/coupon-received'
 import { getPayRecipientInfoList, selectAddress } from '@/api/mall-order/recipient_info'
 import { getInvoiceByParams } from '@/api/mall-order/invoice'
 // import { getPayCartList } from '@/api/mall-cart/cart'
+import { createTrade } from '@/api/mall-order/trade'
 import { getPayInfoGoods } from '@/api/mall-order/pay-info-goods'
 import { getSelected, selectCoupon } from '@/api/mall-order/coupon_selected'
 
@@ -260,14 +261,12 @@ export default {
       addressList: [], // 地址列表
       selectedAddress: {}, // 所选地址
       goodsList: [], // 商品列表
-      priceDetailDTO: {}, // 商品价格
       totalCount: 0, // 购买数量
       totalPrice:0, //总价格
       finalPrice:0, //最终价格
       discountPrice: 0, //优惠券价格
       addrId: "", // 编辑地址传入的id
       moreAddr: false, // 更多地址
-      canUseCouponNum: 0, // 可用优惠券数量
       couponList: [], // 可用优惠券列表
       usedCouponId: [], // 已使用优惠券id
       selectedCoupon: {}, // 已选优惠券对象
@@ -287,6 +286,7 @@ export default {
     //新加的---------------------------------------------start-------------------------------------
     //商家及商品信息
     getPayCartList() {
+      this.$Spin.show()
       var params =  this.axios.paramsHandler({});
       getPayInfoGoods(params).then(({data}) => {
           // getPayCartList(params).then(({data}) => {
@@ -300,9 +300,11 @@ export default {
           this.$Message.error(data.message)
         }
       });
+      this.$Spin.hide()
     },
     //获取收货地址
     getRecipientAddress() {
+      this.$Spin.show()
       var params =  this.axios.paramsHandler({});
       getPayRecipientInfoList(params).then(({data}) => {
         if (data && data.code === "200") {
@@ -315,8 +317,10 @@ export default {
               this.moreAddr = true;
             }
           });
+          this.$Spin.hide()
         } else {
           this.$Message.error(data.message)
+          this.$Spin.hide()
         }
       });
     },
@@ -346,6 +350,7 @@ export default {
     },
     //查询我的优惠券
     getCouponList() {
+      this.$Spin.show();
       var params = this.axios.paramsHandler({
         useStatus: 0 //查询未使用的发票
       })
@@ -358,6 +363,7 @@ export default {
         } else {
           this.$Message.error(data.message)
         }
+        this.$Spin.hide()
       });
     },
     //立即使用 / 放弃使用 优惠券
@@ -386,6 +392,34 @@ export default {
           this.$Message.error(data.message)
         }
       })
+    },
+    //订单结算，跳转到支付页面
+    pay() {
+      var postData = this.axios.dataHandler({
+        orderInvoiceVO:this.invoiceData,
+        payVO: {
+          totalCount: this.totalCount,
+          totalPrice: this.totalPrice,
+          finalPrice: this.finalPrice,
+          discountPrice: this.discountPrice,
+          totalFreight: this.totalFreight,
+          payMerchantList: this.goodsList
+        },
+        recipientInfoVO:this.selectedAddress
+      });
+
+      this.$Spin.show();
+      createTrade(postData).then(({data}) => {
+        this.$Spin.hide();
+        if (data && data.code == '200') {
+          this.$router.push({
+            path: "/payment",
+            query: { code: data.data.code },
+          });
+        }
+      }).catch(() => {
+        this.$Spin.hide();
+      });
     },
     //新加的-----------------------------------------------end---------------------------------------
 
@@ -564,45 +598,45 @@ export default {
         this.$refs.invModal.invoiceAvailable = false;
       }
     },
-
-    pay() {
-      // 结算
-      const params = {
-        client: "PC",
-        remark: [],
-        way: this.$route.query.way,
-      };
-      this.goodsList.forEach((e) => {
-        if (e.remark) {
-          params.remark.push({
-            remark: e.remark,
-            storeId: e.storeId,
-          });
-        }
-      });
-
-      if (!params.remark.length) delete params.remark;
-
-      this.$Spin.show();
-      createTrade(params)
-        .then((res) => {
-          this.$Spin.hide();
-          if (res.success) {
-            if (params.way === "POINTS") {
-              // 积分支付不需要跳转支付页面
-              this.$router.push("/payDone");
-            } else {
-              this.$router.push({
-                path: "/payment",
-                query: { orderType: "TRADE", sn: res.result.sn },
-              });
-            }
-          }
-        })
-        .catch(() => {
-          this.$Spin.hide();
-        });
-    },
+    //
+    // pay() {
+    //   // 结算
+    //   const params = {
+    //     client: "PC",
+    //     remark: [],
+    //     way: this.$route.query.way,
+    //   };
+    //   this.goodsList.forEach((e) => {
+    //     if (e.remark) {
+    //       params.remark.push({
+    //         remark: e.remark,
+    //         storeId: e.storeId,
+    //       });
+    //     }
+    //   });
+    //
+    //   if (!params.remark.length) delete params.remark;
+    //
+    //   this.$Spin.show();
+    //   createTrade(params)
+    //     .then((res) => {
+    //       this.$Spin.hide();
+    //       if (res.success) {
+    //         if (params.way === "POINTS") {
+    //           // 积分支付不需要跳转支付页面
+    //           this.$router.push("/payDone");
+    //         } else {
+    //           this.$router.push({
+    //             path: "/payment",
+    //             query: { orderType: "TRADE", sn: res.result.sn },
+    //           });
+    //         }
+    //       }
+    //     })
+    //     .catch(() => {
+    //       this.$Spin.hide();
+    //     });
+    // },
     // 优惠券可用范围【改造】
     useScope (type, useScope, merchantName) {
       let shop = '平台';

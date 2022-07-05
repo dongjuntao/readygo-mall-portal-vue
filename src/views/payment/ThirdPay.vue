@@ -35,25 +35,48 @@
 <script>
 import vueQr from 'vue-qr';
 import { payCallback, pay } from '@/api/pay.js';
+
+import { alipay } from '@/api/mall-payment/payment'
 export default {
   components: { vueQr },
   data () {
     return {
       qrcode: '', // 二维码
-      params: this.$route.query, // 参数
+      params: this.$route.query.params, // 参数
       interval: null, // 定时器
       num: 0 // 商品数
     };
   },
   methods: {
+    // // 获取支付二维码
+    // handlePay () {
+    //   const params = this.$route.query;
+    //   console.log("params-----------------------1--------",params)
+    //   pay(params).then(res => {
+    //     if (res.success) {
+    //       this.qrcode = res.result;
+    //       this.num = 0;
+    //       this.interval = setInterval(this.callback, 5000);
+    //     } else {
+    //       this.$Message.error(res.message)
+    //     }
+    //   });
+    // },
+
     // 获取支付二维码
     handlePay () {
       const params = this.$route.query;
-      pay(params).then(res => {
-        if (res.success) {
-          this.qrcode = res.result;
-          this.num = 0;
-          this.interval = setInterval(this.callback, 5000);
+      const payParams = {
+        tradeId: params.tradeId,
+        price: params.price,
+        subject: params.tradeId
+      }
+      alipay(payParams).then(({data}) => {
+        console.log("data === ", data)
+        if (data && data.code == '200') {
+          this.qrcode = data.data.url;
+          // this.num = 0;
+          // this.interval = setInterval(this.callback, 5000);
         } else {
           this.$Message.error(res.message)
         }
