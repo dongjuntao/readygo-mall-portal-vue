@@ -10,7 +10,7 @@
           {{ item.name }}
         </li>
       </ul>
-    </div> <hr style="width:1200px;height:2px;background:#e4393c;margin-top:-1px;margin-bottom:5px;"/>
+    </div>
     <!-- 全部商品分类 -->
     <div class="cate-list" v-show="showAlways || showFirstList" @mouseenter="showFirstList = true" @mouseleave="showFirstList = false">
       <!-- 第一级分类 -->
@@ -215,9 +215,9 @@ export default {
   width: 200px;
   float: left;
   padding: 0px;
-  color: #fff;
-  background-color: #6e6568;
-  height: 335px;
+  color: #000;
+  background-color: #ffffff;
+  height: 340px;
   overflow: hidden;
 }
 .large-nav{
@@ -238,10 +238,10 @@ export default {
 .nav-side li {
   padding: 7.5px 0;
   padding-left: 12px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 18px;
   &:hover{
-    background: #999395;
+    background: #dbdbdb;
   }
 }
 .nav-side-item:hover {

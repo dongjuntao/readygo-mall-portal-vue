@@ -49,9 +49,7 @@
             <div>{{ item.regionNames }} {{ item.detailAddress }}</div>
             <div class="edit-btn" v-show="showEditBtn === index">
               <span @click.stop="editAddress(item.id)">修改</span>
-              <span class="ml_10" v-if="!item.isDefault" @click.stop="delAddress(item)"
-                >删除</span
-              >
+              <span class="ml_10" v-if="!item.isDefault" @click.stop="delAddress(item)">删除</span>
             </div>
             <div class="corner-icon" v-show="selectedAddress.id === item.id">
               <div></div>
@@ -226,24 +224,27 @@
     <!-- 添加发票模态框 -->
     <invoice-modal ref="invModal" :invoiceData="invoiceData" @change="getInvMsg" />
     <!-- 选择地址模态框 -->
-    <address-manage ref="address" :id="addrId" @change="addrChange"></address-manage>
+    <address-manage ref="address"
+                    :id="addrId"
+                    :parentProvinceList="provinceList"
+                    :parentCityList="cityList"
+                    :parentAreaList="areaList"
+                    @change=""></address-manage>
   </div>
 </template>
 
 <script>
 import invoiceModal from "@/components/invoiceModal";
 import addressManage from "@/components/addressManage";
-import { memberAddress, delMemberAddress } from "@/api/address";
-import { cartGoodsPay, selectAddr, couponNum} from "@/api/cart";
-import { canUseCouponList } from "@/api/member.js";
 
-import { getReceivedCouponList, getReceivedCouponListAll } from '@/api/mall-member/coupon-received'
+import { getReceivedCouponListAll } from '@/api/mall-member/coupon-received'
 import { getPayRecipientInfoList, selectAddress } from '@/api/mall-order/recipient_info'
 import { getInvoiceByParams } from '@/api/mall-order/invoice'
-// import { getPayCartList } from '@/api/mall-cart/cart'
 import { createTrade } from '@/api/mall-order/trade'
 import { getPayInfoGoods } from '@/api/mall-order/pay-info-goods'
 import { getSelected, selectCoupon } from '@/api/mall-order/coupon_selected'
+import { deleteRecipientInfo } from '@/api/mall-member/recipient-info'
+import {getRegionList} from '@/api/mall-admin/mall-region'
 
 export default {
   name: "Pay",
@@ -265,25 +266,23 @@ export default {
       totalPrice:0, //总价格
       finalPrice:0, //最终价格
       discountPrice: 0, //优惠券价格
-      addrId: "", // 编辑地址传入的id
+      addrId: null, // 编辑地址传入的id
       moreAddr: false, // 更多地址
       couponList: [], // 可用优惠券列表
       usedCouponId: [], // 已使用优惠券id
       selectedCoupon: {}, // 已选优惠券对象
+      provinceList: [],
+      cityList: [],
+      areaList: []
     };
   },
   mounted() {
-    // this.init();
-
-    //新加的-------------------
     this.getRecipientAddress();//收货人信息
     this.getPayCartList(); //商家及商品信息
     this.getInvoiceData(); //发票信息
     this.getCouponList(); //优惠券信息
   },
   methods: {
-
-    //新加的---------------------------------------------start-------------------------------------
     //商家及商品信息
     getPayCartList() {
       this.$Spin.show()
@@ -348,6 +347,7 @@ export default {
         }
       });
     },
+
     //查询我的优惠券
     getCouponList() {
       this.$Spin.show();
@@ -366,6 +366,7 @@ export default {
         this.$Spin.hide()
       });
     },
+
     //立即使用 / 放弃使用 优惠券
     useCoupon(id, used) {
       var data = this.axios.dataHandler({receivedCouponId: id})
@@ -378,14 +379,15 @@ export default {
         }
       })
     },
+
     //获取已选择的优惠券信息
     getSelected() {
       var params = this.axios.paramsHandler({})
       getSelected(params).then(({data}) => {
         if (data && data.code === "200") {
           this.usedCouponId = []
-         if (data.data && data.data.length>0) {
-           this.usedCouponId.push(data.data[0].receivedCouponId);
+         if (data.data) {
+           this.usedCouponId.push(data.data.receivedCouponId);
          }
           this.getPayCartList()
         } else {
@@ -421,145 +423,48 @@ export default {
         this.$Spin.hide();
       });
     },
-    //新加的-----------------------------------------------end---------------------------------------
 
-    // 初始化数据
-    init() {
-      this.getGoodsDetail();
-    },
     goAddressManage() {
       // 跳转地址管理页面
       this.$router.push("/home/MyAddress");
     },
 
-    getGoodsDetail() {
-      // 订单商品详情
-      this.$Spin.show();
-      cartGoodsPay({ way: this.$route.query.way })
-        .then((res) => {
-          this.$Spin.hide();
-          if (res.success) {
-            this.goodsList = res.result.cartList;
-            this.priceDetailDTO = res.result.priceDetailDTO;
-            this.skuList = res.result.skuList;
+    editAddress(id) {
+      // 编辑地址
+      this.addrId = id;
+      // this.provinceList = await this.getProvinceData();
+      // this.cityList = await this.getCity();
+      // this.areaList = await this.getArea();
+      this.getProvinceData();
+      this.getCity();
+      this.getArea()
+      this.$refs.address.show();
 
-            if (res.result.receiptVO) {
-              this.invoiceData = res.result.receiptVO;
-            }
-            let notSupArea = res.result.notSupportFreight;
-            this.selectedCoupon = {};
-            if (res.result.platformCoupon)
-              this.selectedCoupon[res.result.platformCoupon.memberCoupon.id] = res.result.platformCoupon;
-            if (res.result.storeCoupons && Object.keys(res.result.storeCoupons)[0]) {
-              let storeMemberCouponsId = Object.keys(res.result.storeCoupons)[0];
-              let storeCouponId = res.result.storeCoupons[storeMemberCouponsId].memberCoupon.id;
-              this.selectedCoupon[storeCouponId] = res.result.storeCoupons[storeMemberCouponsId];
-            }
-            if (notSupArea) {
-              let content = [];
-              let title = "";
-              notSupArea.forEach((e) => {
-                title = e.errorMessage;
-                content.push(e.goodsSku.goodsName);
-              });
-              this.$Modal.warning({
-                title: "以下商品超出配送区域" || title,
-                content: content.toString(),
-              });
-            }
-            if (res.result.memberAddress) {
-              this.selectedAddress = res.result.memberAddress;
-            }
-            this.getAddress();
-            this.totalNum = 0;
-            for (let i = 0; i < this.skuList.length; i++) {
-              this.totalNum += this.skuList[i].num;
-            }
-            this.usedCouponId = [];
-            this.couponList = res.result.canUseCoupons;
-            const couponKeys = Object.keys(this.selectedCoupon);
-            if (couponKeys.length) {
-              this.couponList.forEach((e) => {
-                if (this.selectedCoupon[e.id] && e.id === this.selectedCoupon[e.id].memberCoupon.id) {
-                  this.usedCouponId.push(e.id);
-                }
-              });
-              this.$nextTick(() => {
-                this.$forceUpdate();
-              });
-            }
-          }
-        })
-        .catch(() => {
-          this.$Spin.hide();
-        });
     },
-    getCouponNum() {
-      // 获取可用优惠券数量
-      couponNum({ way: this.$route.query.way }).then((res) => {
-        this.canUseCouponNum = res.result;
-        if (res.result) {
-          let storeArr = [];
-          let skuArr = [];
-          this.goodsList.forEach((e) => {
-            storeArr.push(e.storeId);
-            e.skuList.forEach((i) => {
-              skuArr.push(i.goodsSku.id);
-            });
-          });
-          let params = {
-            pageNumber: 1,
-            pageSize: 100,
-            memberCouponStatus: "NEW",
-            scopeId: skuArr.toString(),
-            storeId: storeArr.toString(),
-            totalPrice: this.priceDetailDTO.goodsPrice,
-          };
-          canUseCouponList(params).then((res) => {
-            // 可用优惠券列表
-            if (res.success) this.couponList = res.result.records;
-            const couponKeys = Object.keys(this.selectedCoupon);
-            this.usedCouponId = [];
-            if (couponKeys.length) {
-              this.couponList.forEach((e) => {
-                if (e.id === this.selectedCoupon[couponKeys].memberCoupon.id) {
-                  this.usedCouponId.push(e.id);
-                }
-              });
-              this.$nextTick(() => {
-                this.$forceUpdate();
-              });
+
+    //删除地址
+    delAddress (item) {
+      // 删除地址
+      this.$Modal.confirm({
+        title: '提示',
+        content: '你确定删除这个收货地址',
+        onOk: () => {
+          var params =  this.axios.paramsHandler({id: item.id});
+          deleteRecipientInfo(params).then(({data}) => {
+            if (data && data.code=='200') {
+              this.$Message.success('删除成功');
+              this.getRecipientAddress();
+            } else {
+              this.$Message.error('删除失败');
             }
           });
+        },
+        onCancel: () => {
+          this.$Message.info('取消删除');
         }
       });
     },
 
-    editAddress(id) {
-      // 编辑地址
-      this.addrId = id;
-      this.$refs.address.show();
-    },
-    addrChange() {
-      // 添加，编辑地址回显
-      this.getAddress();
-    },
-    delAddress(item) {
-      // 删除地址
-      this.$Modal.confirm({
-        title: "提示",
-        content: "你确定删除这个收货地址",
-        onOk: () => {
-          delMemberAddress(item.id).then((res) => {
-            if (res.success) {
-              this.$Message.success("删除成功");
-              this.getAddress();
-            }
-          });
-        },
-        onCancel: () => {},
-      });
-    },
     goGoodsDetail(skuId, goodsId) {
       // 跳转商品详情
       let routeUrl = this.$router.resolve({
@@ -576,17 +481,7 @@ export default {
       });
       window.open(routeUrl.href, "_blank");
     },
-    // useCoupon(id, used) {
-    //   // 使用优惠券
-    //   let params = {
-    //     way: this.$route.query.way,
-    //     memberCouponId: id,
-    //     used: used, // true 为使用， false为弃用
-    //   };
-    //   selectCoupon(params).then((res) => {
-    //     if (res.success) this.init();
-    //   });
-    // },
+
     // 编辑发票信息
     editInvoice() {
       this.$refs.invModal.invoiceAvailable = true;
@@ -598,46 +493,8 @@ export default {
         this.$refs.invModal.invoiceAvailable = false;
       }
     },
-    //
-    // pay() {
-    //   // 结算
-    //   const params = {
-    //     client: "PC",
-    //     remark: [],
-    //     way: this.$route.query.way,
-    //   };
-    //   this.goodsList.forEach((e) => {
-    //     if (e.remark) {
-    //       params.remark.push({
-    //         remark: e.remark,
-    //         storeId: e.storeId,
-    //       });
-    //     }
-    //   });
-    //
-    //   if (!params.remark.length) delete params.remark;
-    //
-    //   this.$Spin.show();
-    //   createTrade(params)
-    //     .then((res) => {
-    //       this.$Spin.hide();
-    //       if (res.success) {
-    //         if (params.way === "POINTS") {
-    //           // 积分支付不需要跳转支付页面
-    //           this.$router.push("/payDone");
-    //         } else {
-    //           this.$router.push({
-    //             path: "/payment",
-    //             query: { orderType: "TRADE", sn: res.result.sn },
-    //           });
-    //         }
-    //       }
-    //     })
-    //     .catch(() => {
-    //       this.$Spin.hide();
-    //     });
-    // },
-    // 优惠券可用范围【改造】
+
+    // 优惠券可用范围
     useScope (type, useScope, merchantName) {
       let shop = '平台';
       let goods = '全部商品'
@@ -654,7 +511,69 @@ export default {
           break;
       }
       return `${shop} ${goods} 可用`
+    },
+
+
+    // //获取省份信息
+    // async getProvinceData() {
+    //   var params = this.axios.paramsHandler({parent_id: 0},false)
+    //   let res = await getRegionList(params).then(({data}) => {
+    //     if (data && data.code === "200") {
+    //       return data.data
+    //     }
+    //   })
+    //   return res;
+    // },
+    // //获取城市信息
+    // async getCity(){
+    //   var params = this.axios.paramsHandler({parent_id: this.province},false)
+    //   let res = await getRegionList(params).then(({data}) => {
+    //     if (data && data.code === "200") {
+    //       return data.data
+    //     }
+    //   })
+    //   return res;
+    // },
+    // //获取区县信息
+    // async getArea(){
+    //   var params = this.axios.paramsHandler({parent_id: this.city},false)
+    //   let res = await getRegionList(params).then(({data}) => {
+    //     if (data && data.code === "200") {
+    //       return data.data
+    //     }
+    //   })
+    //   return res;
+    // }
+
+    //获取省份信息
+    getProvinceData() {
+      var params = this.axios.paramsHandler({parent_id: 0},false)
+      getRegionList(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.provinceList = data.data;
+        }
+      })
+    },
+    //获取城市信息
+    getCity(){
+      var params = this.axios.paramsHandler({parent_id: this.province},false)
+      getRegionList(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.cityList = data.data;
+        }
+      })
+    },
+    //获取区县信息
+    getArea(){
+      var params = this.axios.paramsHandler({parent_id: this.city},false)
+      getRegionList(params).then(({data}) => {
+        if (data && data.code === "200") {
+          this.areaList = data.data;
+        }
+      })
     }
+
+
   },
 };
 </script>

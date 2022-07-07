@@ -88,56 +88,6 @@ export default {
       });
     },
 
-    //---------------------------------------------------------------------
-    // 获取订单详情
-    // getTradeDetail () {
-    //   const params = this.$route.query;
-    //   params.clientType = 'PC'
-    //   tradeDetail(params).then(res => {
-    //     if (res.success) {
-    //       this.payDetail = res.result;
-    //       this.endTime = this.payDetail.autoCancel
-    //       this.isStart = true
-    //       this.support = this.payDetail.support
-    //       this.walletValue = this.payDetail.walletValue
-    //     }
-    //   });
-    // },
-
-    // 支付
-    // handlePay (way) {
-    //   // 余额支付则直接跳转
-    //   if (way === 'WALLET') {
-    //     // 如果待支付金额大于余额，则报错
-    //     if (this.payDetail.price > this.walletValue) {
-    //       Message.error('余额不足以支付当前订单，如需充值请前往会员中心');
-    //       return;
-    //     }
-    //   }
-    //   const params = this.$route.query;
-    //   params.paymentMethod = way;
-    //   params.paymentClient = 'NATIVE';
-    //   params.price = this.payDetail.price;
-    //   if (way === 'WALLET') {
-    //     this.$Modal.confirm({
-    //       title: '支付确认',
-    //       content: '<p>确认使用余额支付吗？</p>',
-    //       onOk: () => {
-    //         pay(params).then(res => {
-    //           if (res.success) {
-    //             this.$Message.warning(res.message)
-    //             this.$router.push('/payDone');
-    //           } else {
-    //             this.$Message.warning(res.message)
-    //           }
-    //         })
-    //       }
-    //     });
-    //   } else {
-    //     this.$router.push({path: '/qrpay', query: params});
-    //   }
-    // },
-
     // 支付
     handlePay (way) {
       const params = this.$route.query;
@@ -145,14 +95,13 @@ export default {
         path: '/qrpay',
         query: {
           params: { paymentMethod: way },
-          tradeId: this.$route.query.code,
+          tradeCode: this.$route.query.code,
           price: this.finalPrice
         }
       });
     }
   },
   mounted () {
-    // this.getTradeDetail();
     this.getTradePayInfo()
   }
 };

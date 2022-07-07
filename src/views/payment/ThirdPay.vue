@@ -34,9 +34,8 @@
 </template>
 <script>
 import vueQr from 'vue-qr';
-import { payCallback, pay } from '@/api/pay.js';
+import { alipay, tradeResult } from '@/api/mall-payment/payment'
 
-import { alipay } from '@/api/mall-payment/payment'
 export default {
   components: { vueQr },
   data () {
@@ -44,55 +43,41 @@ export default {
       qrcode: '', // 二维码
       params: this.$route.query.params, // 参数
       interval: null, // 定时器
-      num: 0 // 商品数
+      num: 0 //轮询次数
     };
   },
   methods: {
-    // // 获取支付二维码
-    // handlePay () {
-    //   const params = this.$route.query;
-    //   console.log("params-----------------------1--------",params)
-    //   pay(params).then(res => {
-    //     if (res.success) {
-    //       this.qrcode = res.result;
-    //       this.num = 0;
-    //       this.interval = setInterval(this.callback, 5000);
-    //     } else {
-    //       this.$Message.error(res.message)
-    //     }
-    //   });
-    // },
-
     // 获取支付二维码
     handlePay () {
       const params = this.$route.query;
       const payParams = {
-        tradeId: params.tradeId,
+        tradeCode: params.tradeCode,
         price: params.price,
-        subject: params.tradeId
+        subject: params.tradeCode
       }
       alipay(payParams).then(({data}) => {
-        console.log("data === ", data)
         if (data && data.code == '200') {
           this.qrcode = data.data.url;
-          // this.num = 0;
-          // this.interval = setInterval(this.callback, 5000);
+          //轮询获取支付结果
+          this.interval = setInterval(this.callback, 5000);
         } else {
-          this.$Message.error(res.message)
+          this.$Message.error(data.message)
         }
       });
     },
-    callback () { // 支付回调接口
-      this.num++;
-      if (this.num >= 7) {
+
+    // 轮询查询支付结果，最多轮询30次
+    callback () {
+      this.num ++;
+      if (this.num > 30) {
         clearInterval(this.interval);
         this.interval = null;
+        return;
       }
-      let params = JSON.parse(JSON.stringify(this.$route.query));
-      delete params.paymentMethod;
-      delete params.paymentClient;
-      payCallback(params).then(res => {
-        if (res.result) {
+      let params = this.axios.paramsHandler({ tradeCode: this.$route.query.tradeCode});
+      tradeResult(params).then(({data}) => {
+        //支付成功后跳转
+        if (data.data && data.code == '200' && data.data.tradeStatus=='TRADE_SUCCESS') {
           clearInterval(this.interval);
           this.interval = null;
           this.$router.push({path: '/payDone', query: {orderType: this.$route.query.orderType}});
