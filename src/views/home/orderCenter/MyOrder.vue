@@ -26,51 +26,60 @@
       >
         <div class="order-header">
           <div>
-            <div>{{ filterOrderStatus(order.orderStatus) }}</div>
+            <div>{{ filterOrderStatus(order.status) }}</div>
             <div>
-              订单号：{{ order.sn }} &nbsp; &nbsp; &nbsp;{{order.createTime}}
+              订单号：{{ order.code }} &nbsp; &nbsp; &nbsp;{{order.createTime | formatDateTime}}
             </div>
           </div>
           <div>
-            <Button @click="delOrder(order.sn)" class="del-btn mr_10 fontsize_16" style="margin-top:-5px;" type="text" icon="ios-trash-outline" size="small"></Button>
-            <span>{{ order.flowPrice | unitPrice("￥") }}</span>
+            <Button @click="deleteOrder(order.code)" class="del-btn mr_10 fontsize_16" style="margin-top:-5px;" type="text" icon="ios-trash-outline" size="small"></Button>
+            <span>{{ order.totalPrice | unitPrice("￥") }}</span>
           </div>
         </div>
         <div class="order-body">
           <div class="goods-list">
             <div
-              v-for="(goods, goodsIndex) in order.orderItems"
+              v-for="(goods, goodsIndex) in order.orderDetailList"
               :key="goodsIndex"
             >
               <img
-                @click="goodsDetail(goods.skuId, goods.goodsId)"
+                @click="goodsDetail(goods.goodsSkuId, goods.goodsId)"
                 class="hover-color"
-                :src="goods.image"
+                :src="goods.goodsImage"
                 alt=""
               />
               <div>
-                <div class="hover-color" @click="goodsDetail(goods.skuId, goods.goodsId)">{{ goods.name }}</div>
+                <div class="hover-color" @click="goodsDetail(goods.goodsSkuId, goods.goodsId)">{{ goods.goodsName }}</div>
                 <div class="mt_10">
                   <span class="global_color"
-                    >{{ goods.goodsPrice | unitPrice("￥") }} </span
-                  >x {{ goods.num }}
+                    >{{ goods.goodsSellingPrice | unitPrice("￥") }} </span
+                  >x {{ goods.goodsCount }}
                 </div>
-                <Button v-if="goods.commentStatus == 'UNFINISHED'" @click="comment(order.sn, goodsIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
-                <Button v-if="goods.complainStatus == 'NO_APPLY'" @click="complain(order.sn, goodsIndex)" type="warning" class="fontsize_12" size="small" style="position:relative;top:-22px;left:100px">投诉</Button>
+                <Button v-if="goods.commentStatus == 'UNFINISHED'" @click="comment(order.code, goodsIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
+                <Button v-if="goods.complainStatus == 'NO_APPLY'" @click="complain(order.code, goodsIndex)" type="warning" class="fontsize_12" size="small" style="position:relative;top:-22px;left:100px">投诉</Button>
               </div>
             </div>
           </div>
           <div>
-            <span @click="shopPage(order.storeId)">{{ order.storeName }}</span>
+            <span @click="shopPage(order.merchantId)">{{ order.merchantName }}</span>
           </div>
           <div>
             <!-- 订单基础操作 -->
-            <Button @click="orderDetail(order.sn)" type="info" size="small">订单详情</Button>
-            <Button @click="handleCancelOrder(order.sn)" type="error" v-if="order.allowOperationVO.cancel" size="small">取消订单</Button>
-            <Button @click="goPay(order.sn)" size="small" type="success" v-if="order.allowOperationVO.pay">去支付</Button>
-            <Button @click="received(order.sn)" size="small" type="warning" v-if="order.allowOperationVO.rog">确认收货</Button>
-            <!-- 售后 -->
-            <Button v-if="order.groupAfterSaleStatus.includes('NOT_APPLIED')" @click="applyAfterSale(order.orderItems)" size="small">申请售后</Button>
+            <Button @click="orderDetail(order.code)" type="info" size="small">订单详情</Button>
+            <!-- 取消订单 (未支付状态（UNPAID），已支付状态（），未发货状态（UNDELIVERED）才能取消订单)-->
+            <Button @click="handleCancelOrder(order.code)" type="error"
+                    v-if="order.status=='UNPAID' || order.status=='PAID' || order.status=='UNDELIVERED'" size="small">取消订单
+            </Button>
+            <!-- 去支付 (未支付状态（UNPAID）才能去支付)-->
+            <Button @click="goPay(order.tradeCode, order.code)" size="small" type="success"
+                    v-if="order.status == 'UNPAID'">去支付
+            </Button>
+            <!-- 确认收货 (待收货状态（DELIVERED）才能确认收货)-->
+            <Button @click="received(order.code)" size="small" type="warning"
+                    v-if="order.status == 'DELIVERED'">确认收货
+            </Button>
+            <!-- 售后 (已完成的订单才能申请售后)-->
+            <Button v-if="order.status == 'FINISHED'" @click="applyAfterSale(order.orderItems)" size="small">申请售后</Button>
           </div>
         </div>
       </div>
@@ -100,8 +109,8 @@
     </Modal>
     <Modal v-model="cancelAvail" title="请选择取消订单原因" @on-ok="sureCancel" @on-cancel="cancelAvail = false">
       <RadioGroup v-model="cancelParams.reason" vertical type="button" button-style="solid">
-        <Radio :label="item.reason" v-for="item in cancelReason" :key="item.id">
-           {{item.reason}}
+        <Radio :label="item" v-for="item in cancelReason" :key="item">
+           {{item}}
         </Radio>
       </RadioGroup>
     </Modal>
@@ -109,9 +118,11 @@
 </template>
 
 <script>
-import { getOrderList, sureReceived, cancelOrder, delOrder } from '@/api/order';
+import { sureReceived, delOrder } from '@/api/order';
 import { afterSaleReason } from '@/api/member';
 import { orderStatusList } from '../enumeration.js'
+
+import { getOrderList, cancelOrder, deleteOrder } from "@/api/mall-order/order"
 export default {
   name: 'MyOrder',
   props: {
@@ -123,6 +134,9 @@ export default {
   data () {
     return {
       orderList: [], // 订单列表
+      pageNo: 1,
+      pageSize: 10,
+      status: "",
       params: { // 请求参数
         pageNumber: 1,
         pageSize: 10,
@@ -131,12 +145,12 @@ export default {
         tag: 'ALL'
       },
       cancelParams: { // 取消售后参数
-        orderSn: '',
+        orderCode: '',
         reason: ''
       },
       // 状态数组
       orderStatusList,
-      changeWay: ['全部订单', '待付款', '待收货', '已完成'], // 订单状态
+      changeWay: ['全部订单', '待付款', '待收货', '待评价'], // 订单状态
       total: 0, // 数据总数
       spinShow: false, // 加载状态
       afterSaleModal: false, // 选择售后商品模态框
@@ -146,7 +160,12 @@ export default {
       ],
       afterSaleArr: [], // 售后商品列表
       cancelAvail: false, // 取消订单modal控制
-      cancelReason: [] // 取消订单原因
+      cancelReason:  [ // 取消订单原因
+        "拍错了",
+        "买重复了",
+        "不想要了",
+        "有更满意的了"
+      ]
     };
   },
   mounted () {
@@ -158,7 +177,7 @@ export default {
       // 跳转商品详情
       let routeUrl = this.$router.resolve({
         path: '/goodsDetail',
-        query: { skuId, goodsId }
+        query: { skuId: skuId, id: goodsId }
       });
       window.open(routeUrl.href, '_blank');
     },
@@ -200,9 +219,19 @@ export default {
         }
       })
     },
-    goPay (sn) { // 去支付
-      this.$router.push({path: '/payment', query: {orderType: 'ORDER', sn}});
+
+    // 去支付
+    goPay (code, orderCode) {
+      this.$router.push({
+        path: '/payment',
+        query: {
+          code: code,
+          orderType: "ORDER",
+          orderCode: orderCode
+        }
+      });
     },
+
     applyAfterSale (goodsItem) { // 申请售后
       let arr = []
       goodsItem.forEach(e => {
@@ -227,13 +256,16 @@ export default {
     complain (sn, goodsIndex) { // 投诉
       this.$router.push({name: 'Complain', query: {sn, index: goodsIndex}})
     },
-    delOrder (sn) { // 删除订单
+
+    // 删除订单
+    deleteOrder (code) {
       this.$Modal.confirm({
         title: '删除订单',
         content: '<p>确认删除当前订单吗？</p>',
         onOk: () => {
-          delOrder(sn).then(res => {
-            if (res.success) {
+          var params = this.axios.paramsHandler({ code: code});
+          deleteOrder(params).then(({data}) => {
+            if (data && data.code == '200') {
               this.$Message.success('删除成功');
               this.getList()
             }
@@ -242,20 +274,24 @@ export default {
         onCancel: () => {}
       });
     },
-    getList () { // 获取订单列表
+
+    // 获取订单列表
+    getList () {
       this.spinShow = true;
-      let params = JSON.parse(JSON.stringify(this.params))
-      if (params.orderStatus === 'ALL') {
-        delete params.orderStatus
-      }
-      getOrderList(params).then(res => {
+      var params = this.axios.paramsHandler({
+        pageNo: this.pageNo,
+        pageSize: this.pageSize,
+        status: this.status
+      });
+      getOrderList(params).then(({data}) => {
         this.spinShow = false
-        if (res.success) {
-          this.orderList = res.result.records;
-          this.total = res.result.total;
+        if (data && data.code == 200) {
+          this.orderList = data.data.list;
+          this.total = data.data.totalCount;
         }
       });
     },
+
     changePageNum (val) { // 修改页码
       this.params.pageNumber = val;
       this.getList()
@@ -265,27 +301,31 @@ export default {
       this.params.pageSize = val;
       this.getList()
     },
-    handleCancelOrder (sn) {
+
+
+    handleCancelOrder (code) {
       // 取消订单
-      this.cancelParams.orderSn = sn;
-      afterSaleReason('CANCEL').then(res => {
-        if (res.success) {
-          this.cancelReason = res.result;
-          this.cancelAvail = true
-          this.cancelParams.reason = this.cancelReason[0].reason
-        }
-      })
+      this.cancelAvail = true
+      this.cancelParams.orderCode = code;
+      this.cancelParams.reason = this.cancelReason[0];
     },
     sureCancel () { // 确定取消
-      cancelOrder(this.cancelParams).then(res => {
-        if (res.success) {
+      var params = this.axios.paramsHandler({
+        code: this.cancelParams.orderCode,
+        cancelReason: this.cancelParams.reason
+      });
+      cancelOrder(params).then(({data}) => {
+        if (data && data.code == '200') {
           this.$Message.success('取消订单成功')
           this.getList()
           this.cancelAvail = false
         }
       })
     },
+
+
     filterOrderStatus (status) { // 获取订单状态中文
+      console.log("status == ", status)
       const ob = this.orderStatusList.filter(e => { return e.status === status });
       return ob[0].name
     }

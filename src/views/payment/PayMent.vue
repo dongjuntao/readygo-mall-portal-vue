@@ -28,7 +28,7 @@
           alt="">
         <span>支付宝</span>
       </div>
-      <div v-if="payType.type=='WECHAT_PAY'" class="-box-item" @click="handlePay('WECHAT')">
+      <div v-if="payType.type=='WECHAT_PAY'" class="-box-item" @click="handlePay('WECHAT_APY')">
         <img
           :src="payType.logo"
           alt="">
@@ -76,7 +76,11 @@ export default {
     //新增的---------------------------
     //交易信息
     getTradePayInfo() {
-      var params = this.axios.paramsHandler({code: this.$route.query.code});
+      var params = this.axios.paramsHandler({
+        code: this.$route.query.code, //交易号
+        orderType: this.$route.query.orderType,
+        orderCode:  this.$route.query.orderCode //订单号
+      });
       tradePayInfo(params).then(({data}) => {
         if (data && data.code=='200') {
           this.isStart = true
@@ -89,14 +93,14 @@ export default {
     },
 
     // 支付
-    handlePay (way) {
-      const params = this.$route.query;
+    handlePay (payType) {
       this.$router.push({
         path: '/qrpay',
         query: {
-          params: { paymentMethod: way },
+          payType: payType,
+          orderType: this.$route.query.orderType,
           tradeCode: this.$route.query.code,
-          price: this.finalPrice
+          orderCode: this.$route.query.orderCode
         }
       });
     }

@@ -288,13 +288,13 @@ export default {
       this.$Spin.show()
       var params =  this.axios.paramsHandler({});
       getPayInfoGoods(params).then(({data}) => {
-          // getPayCartList(params).then(({data}) => {
         if (data && data.code === "200") {
           this.totalPrice = data.data.totalPrice;
           this.totalCount = data.data.totalCount;
           this.finalPrice = data.data.finalPrice;
           this.discountPrice = data.data.discountPrice;
           this.goodsList = data.data.payMerchantList;
+          console.log("this.goodsList===", this.goodsList)
         } else {
           this.$Message.error(data.message)
         }
@@ -416,7 +416,10 @@ export default {
         if (data && data.code == '200') {
           this.$router.push({
             path: "/payment",
-            query: { code: data.data.code },
+            query: {
+              code: data.data.code,
+              orderType: "TRADE"
+            }
           });
         }
       }).catch(() => {
@@ -432,9 +435,6 @@ export default {
     editAddress(id) {
       // 编辑地址
       this.addrId = id;
-      // this.provinceList = await this.getProvinceData();
-      // this.cityList = await this.getCity();
-      // this.areaList = await this.getArea();
       this.getProvinceData();
       this.getCity();
       this.getArea()
@@ -512,38 +512,6 @@ export default {
       }
       return `${shop} ${goods} 可用`
     },
-
-
-    // //获取省份信息
-    // async getProvinceData() {
-    //   var params = this.axios.paramsHandler({parent_id: 0},false)
-    //   let res = await getRegionList(params).then(({data}) => {
-    //     if (data && data.code === "200") {
-    //       return data.data
-    //     }
-    //   })
-    //   return res;
-    // },
-    // //获取城市信息
-    // async getCity(){
-    //   var params = this.axios.paramsHandler({parent_id: this.province},false)
-    //   let res = await getRegionList(params).then(({data}) => {
-    //     if (data && data.code === "200") {
-    //       return data.data
-    //     }
-    //   })
-    //   return res;
-    // },
-    // //获取区县信息
-    // async getArea(){
-    //   var params = this.axios.paramsHandler({parent_id: this.city},false)
-    //   let res = await getRegionList(params).then(({data}) => {
-    //     if (data && data.code === "200") {
-    //       return data.data
-    //     }
-    //   })
-    //   return res;
-    // }
 
     //获取省份信息
     getProvinceData() {

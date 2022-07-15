@@ -7,17 +7,17 @@
         <div class="left-tips-time">请您尽快完成支付，否则订单会被自动取消</div>
       </div>
       <div class="head-right">
-        <div>应付金额 <span class="price">{{$route.query.price | unitPrice}}</span>元</div>
+        <div>应付金额 <span class="price">{{ price | unitPrice}}</span>元</div>
       </div>
     </div>
     <div class="content">
-      <div class="pay-way">{{params.paymentMethod === 'ALIPAY' ? '支付宝支付' : '微信支付'}}</div>
+      <div class="pay-way">{{ payType === 'ALIPAY' ? '支付宝支付' : '微信支付'}}</div>
       <div class="qrcode">
         <div style="width:200px;height:200px;border:1px solid #eee;">
           <vue-qr :text="qrcode" :margin="0" colorDark="#000" colorLight="#fff" :size="200"></vue-qr>
         </div>
         <div class="intro">
-          <Icon type="md-qr-scanner" /> 请使用{{params.paymentMethod === 'ALIPAY' ? '支付宝' : '微信'}}扫码付款
+          <Icon type="md-qr-scanner" /> 请使用{{ payType === 'ALIPAY' ? '支付宝' : '微信'}}扫码付款
         </div>
       </div>
       <div class="btn-div">
@@ -34,30 +34,31 @@
 </template>
 <script>
 import vueQr from 'vue-qr';
-import { alipay, tradeResult } from '@/api/mall-payment/payment'
+import { alipay, payResult } from '@/api/mall-payment/payment'
 
 export default {
   components: { vueQr },
   data () {
     return {
       qrcode: '', // 二维码
-      params: this.$route.query.params, // 参数
+      payType: this.$route.query.payType, // 参数
       interval: null, // 定时器
+      price: "",
       num: 0 //轮询次数
     };
   },
   methods: {
     // 获取支付二维码
     handlePay () {
-      const params = this.$route.query;
-      const payParams = {
-        tradeCode: params.tradeCode,
-        price: params.price,
-        subject: params.tradeCode
-      }
+      const payParams = this.axios.paramsHandler({
+        tradeCode: this.$route.query.tradeCode,
+        orderCode: this.$route.query.orderCode,
+        orderType: this.$route.query.orderType
+      })
       alipay(payParams).then(({data}) => {
         if (data && data.code == '200') {
           this.qrcode = data.data.url;
+          this.price = data.data.price;
           //轮询获取支付结果
           this.interval = setInterval(this.callback, 5000);
         } else {
@@ -74,8 +75,10 @@ export default {
         this.interval = null;
         return;
       }
-      let params = this.axios.paramsHandler({ tradeCode: this.$route.query.tradeCode});
-      tradeResult(params).then(({data}) => {
+      let params = this.axios.paramsHandler({
+        code: this.$route.query.orderType=='ORDER' ? this.$route.query.orderCode : this.$route.query.tradeCode
+      });
+      payResult(params).then(({data}) => {
         //支付成功后跳转
         if (data.data && data.code == '200' && data.data.tradeStatus=='TRADE_SUCCESS') {
           clearInterval(this.interval);

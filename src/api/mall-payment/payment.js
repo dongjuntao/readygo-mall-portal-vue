@@ -15,9 +15,9 @@ export function alipay(params) {
 /**
  * 获取支付宝交易结果
  */
-export function tradeResult(params) {
+export function payResult(params) {
   return request({
-    url: prefix + '/alipay/tradeResult',
+    url: prefix + '/alipay/payResult',
     method: 'GET',
     params: params
   })
