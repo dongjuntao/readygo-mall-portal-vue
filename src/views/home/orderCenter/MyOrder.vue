@@ -79,7 +79,7 @@
                     v-if="order.status == 'DELIVERED'">确认收货
             </Button>
             <!-- 售后 (已完成的订单才能申请售后)-->
-            <Button v-if="order.status == 'FINISHED'" @click="applyAfterSale(order.orderItems)" size="small">申请售后</Button>
+            <Button v-if="order.status == 'FINISHED'" @click="applyAfterSale(order.orderDetailList)" size="small">申请售后</Button>
           </div>
         </div>
       </div>
@@ -185,20 +185,21 @@ export default {
     change (index) {
       switch (index) {
         case 0:
-          this.params.tag = 'ALL'
+          this.status = ""
           break;
         case 1:
-          this.params.tag = 'WAIT_PAY'
+          this.status = "UNPAID"
           break;
         case 2:
-          this.params.tag = 'WAIT_ROG'
+          this.status = "DELIVERED"
           break;
         case 3:
-          this.params.tag = 'COMPLETE'
+          this.status = "FINISHED"
           break;
       }
       this.getList()
     },
+
     // 跳转店铺首页
     shopPage (id) {
       let routeUrl = this.$router.resolve({
@@ -207,10 +208,12 @@ export default {
       });
       window.open(routeUrl.href, '_blank');
     },
-    orderDetail (sn) {
+
+    orderDetail (code) {
       // 跳转订单详情
-      this.$router.push({ name: 'OrderDetail', query: {sn} });
+      this.$router.push({ name: 'OrderDetail', query: {code: code} });
     },
+
     received (sn) { // 确认收货
       sureReceived(sn).then(res => {
         if (res.success) {
@@ -233,9 +236,10 @@ export default {
     },
 
     applyAfterSale (goodsItem) { // 申请售后
+      console.log("goodsItem == ", goodsItem)
       let arr = []
       goodsItem.forEach(e => {
-        if (e.afterSaleStatus === 'NOT_APPLIED') {
+        if (e.afterSalesStatus === 'NOT_APPLIED') {
           arr.push(e)
         }
       });

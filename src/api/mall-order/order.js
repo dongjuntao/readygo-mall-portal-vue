@@ -44,3 +44,14 @@ export function deleteOrder(params) {
     params: params
   })
 }
+
+/**
+ * 获取订单信息（包括明细）
+ */
+export function getOrderAndDetailByParams(params) {
+  return request({
+    url: prefix+'/order/getOrderAndDetailByParams',
+    method: 'GET',
+    params: params
+  })
+}

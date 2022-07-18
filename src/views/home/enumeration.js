@@ -23,7 +23,7 @@ export const orderStatusList = [
   },
   {
     name: '已完成',
-    status: 'COMPLETED'
+    status: 'FINISHED'
   },
   {
     name: '待核验',

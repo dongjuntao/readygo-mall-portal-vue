@@ -1,67 +1,68 @@
 <template>
-  <div class="order-detail" v-if="order.order">
+  <div class="order-detail" v-if="order">
     <card _Title="订单详情" :_Size="16"></card>
-    <Card class="mb_10" v-if="order.allowOperationVO.pay || order.allowOperationVO.rog || order.allowOperationVO.cancel">
-      <Button type="success" @click="goPay(order.order.sn)" size="small" v-if="order.allowOperationVO.pay">去支付</Button>
-      <Button type="info" @click="received(order.order.sn)" size="small" v-if="order.allowOperationVO.rog">确认收货</Button>
-      <Button type="error" @click="handleCancelOrder(order.order.sn)" v-if="order.allowOperationVO.cancel" size="small">取消订单</Button>
-    </Card>
-    <p class="verificationCode" v-if="order.order.verificationCode">核验码：<span>{{order.order.verificationCode}}</span></p>
-    <div class="order-card">
-      <p class="global_color fontsize_18">{{ order.orderStatusValue }}</p>
-      <p>订单号：{{ order.order.sn }}</p>
-      <div style="color:#999;" class="operation-time">操作时间：{{order.order.updateTime}}</div>
-      <Steps class="progress" :current="progressList.length" direction="vertical">
-        <Step
-          :title="progress.message"
-          :content="progress.createTime"
-          v-for="(progress, index) in progressList"
-          :key="index"
-        ></Step>
-      </Steps>
-    </div>
+<!--    <Card class="mb_10" v-if="order.allowOperationVO.pay || order.allowOperationVO.rog || order.allowOperationVO.cancel">-->
+<!--      <Button type="success" @click="goPay(order.order.sn)" size="small" v-if="order.allowOperationVO.pay">去支付</Button>-->
+<!--      <Button type="info" @click="received(order.order.sn)" size="small" v-if="order.allowOperationVO.rog">确认收货</Button>-->
+<!--      <Button type="error" @click="handleCancelOrder(order.order.sn)" v-if="order.allowOperationVO.cancel" size="small">取消订单</Button>-->
+<!--    </Card>-->
+<!--    <p class="verificationCode" v-if="order.order.verificationCode">核验码：<span>{{order.order.verificationCode}}</span></p>-->
+<!--    <div class="order-card">-->
+<!--      <p class="global_color fontsize_18">{{ order.orderStatusValue }}</p>-->
+<!--      <p>订单号：{{ order.order.sn }}</p>-->
+<!--      <div style="color:#999;" class="operation-time">操作时间：{{order.order.updateTime}}</div>-->
+<!--      <Steps class="progress" :current="progressList.length" direction="vertical">-->
+<!--        <Step-->
+<!--          :title="progress.message"-->
+<!--          :content="progress.createTime"-->
+<!--          v-for="(progress, index) in progressList"-->
+<!--          :key="index"-->
+<!--        ></Step>-->
+<!--      </Steps>-->
+<!--    </div>-->
+
     <div class="order-card">
       <h3>收货人信息</h3>
-      <p>收货人：{{order.order.consigneeName}}</p>
-      <p>手机号码：{{order.order.consigneeMobile | secrecyMobile}}</p>
-      <p>收货地址：{{order.order.consigneeAddressPath | unitAddress}} {{order.order.consigneeDetail}}</p>
+      <p>收货人：{{order.recipientName}}</p>
+      <p>手机号码：{{order.recipientMobile | secrecyMobile}}</p>
+      <p>收货地址：{{ order.regionNames }} {{order.recipientDetailAddress }}</p>
     </div>
     <div class="order-card">
       <h3>付款信息</h3>
-      <p>支付方式：{{order.paymentMethodValue}}</p>
-      <p>付款状态：{{order.payStatusValue}}</p>
+      <p>支付方式：{{order.payType == 0 ? '支付宝' : '微信'}}</p>
+      <p>付款状态：{{'已付款'}}</p>
     </div>
-    <div class="order-card" v-if="!order.order.verificationCode">
-      <h3>配送信息</h3>
-      <p>配送方式：{{order.deliveryMethodValue}}</p>
-      <p>配送状态：{{order.deliverStatusValue}}</p>
-      <p v-if="logistics">物流信息：{{logistics.shipper || '暂无物流信息'}}</p>
-      <p v-if="logistics">物流单号：{{logistics.logisticCode || '暂无物流单号'}}</p>
-      <div class="div-express-log" v-if="logistics">
-          <div class="express-log">
-            <p>订单日志：</p>
-            <div v-for="(item, index) in logistics.traces" :key="index">
-              <span class="time">{{ item.AcceptTime }}</span>
-              <span class="detail">{{ item.AcceptStation }}</span>
-            </div>
-          </div>
-      </div>
-    </div>
-    <div class="order-card">
-      <h3>发票信息</h3>
-      <template v-if="order.order.receipt">
-        <p>发票抬头：{{order.order.receiptVO.receiptTitle}}</p>
-        <p>发票内容：{{order.order.receiptVO.receiptContent}}</p>
-        <p v-if="order.order.receiptVO.taxpayerId">纳税人识别号：{{order.order.receiptVO.taxpayerId}}</p>
-      </template>
-      <div v-else style="color:#999;margin-left:5px">
-        未开发票
-      </div>
-    </div>
+<!--    <div class="order-card" v-if="!order.order.verificationCode">-->
+<!--      <h3>配送信息</h3>-->
+<!--      <p>配送方式：{{order.deliveryMethodValue}}</p>-->
+<!--      <p>配送状态：{{order.deliverStatusValue}}</p>-->
+<!--      <p v-if="logistics">物流信息：{{logistics.shipper || '暂无物流信息'}}</p>-->
+<!--      <p v-if="logistics">物流单号：{{logistics.logisticCode || '暂无物流单号'}}</p>-->
+<!--      <div class="div-express-log" v-if="logistics">-->
+<!--          <div class="express-log">-->
+<!--            <p>订单日志：</p>-->
+<!--            <div v-for="(item, index) in logistics.traces" :key="index">-->
+<!--              <span class="time">{{ item.AcceptTime }}</span>-->
+<!--              <span class="detail">{{ item.AcceptStation }}</span>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div class="order-card">-->
+<!--      <h3>发票信息</h3>-->
+<!--      <template v-if="order.order.receipt">-->
+<!--        <p>发票抬头：{{order.order.receiptVO.receiptTitle}}</p>-->
+<!--        <p>发票内容：{{order.order.receiptVO.receiptContent}}</p>-->
+<!--        <p v-if="order.order.receiptVO.taxpayerId">纳税人识别号：{{order.order.receiptVO.taxpayerId}}</p>-->
+<!--      </template>-->
+<!--      <div v-else style="color:#999;margin-left:5px">-->
+<!--        未开发票-->
+<!--      </div>-->
+<!--    </div>-->
     <!-- 订单商品 -->
     <div class="goods">
       <div class="shop-name">
-        <span @click="shopPage(order.order.storeId)">{{ order.order.storeName }}</span>
+        <span @click="shopPage(order.merchantId)">{{ order.merchantName }}</span>
       </div>
       <table>
         <thead>
@@ -75,23 +76,23 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(goods, goodsIndex) in order.orderItems" :key="goodsIndex">
+          <tr v-for="(goods, goodsIndex) in order.orderDetailList" :key="goodsIndex">
             <td>
-              <img @click="goodsDetail(goods.skuId, goods.goodsId)" :src="goods.image" alt="" />
+              <img @click="goodsDetail(goods.goodsSkuId, goods.goodsId)" :src="goods.goodsImage" alt="" />
               <div>
-                <p @click="goodsDetail(goods.skuId, goods.goodsId)" class="hover-color">
+                <p @click="goodsDetail(goods.goodsSkuId, goods.goodsId)" class="hover-color">
                   {{ goods.goodsName }}
                 </p>
               </div>
             </td>
             <td>{{ goods.id }}</td>
-            <td>{{ goods.goodsPrice | unitPrice('￥') }}</td>
-            <td>{{ goods.num }}</td>
-            <td>{{ (goods.goodsPrice * goods.num) | unitPrice('￥') }}</td>
+            <td>{{ goods.goodsSellingPrice | unitPrice('￥') }}</td>
+            <td>{{ goods.goodsCount }}</td>
+            <td>{{ (goods.goodsSellingPrice * goods.goodsCount) | unitPrice('￥') }}</td>
             <td>
-              <Button v-if="goods.afterSaleStatus.includes('NOT_APPLIED') || goods.afterSaleStatus.includes('PART_AFTER_SALE')" @click="applyAfterSale(goods.sn)" type="info" size="small" class="mb_5">申请售后</Button>
-              <Button v-if="goods.commentStatus == 'UNFINISHED'" @click="comment(order.order.sn, goodsIndex)" size="small" type="success" class="fontsize_12 mb_5" >评价</Button>
-              <Button v-if="goods.complainStatus == 'NO_APPLY'" @click="complain(order.order.sn, goodsIndex)" type="warning" class="fontsize_12" size="small">投诉</Button>
+<!--              <Button v-if="goods.afterSaleStatus.includes('NOT_APPLIED') || goods.afterSaleStatus.includes('PART_AFTER_SALE')" @click="applyAfterSale(goods.sn)" type="info" size="small" class="mb_5">申请售后</Button>-->
+<!--              <Button v-if="goods.commentStatus == 'UNFINISHED'" @click="comment(order.order.sn, goodsIndex)" size="small" type="success" class="fontsize_12 mb_5" >评价</Button>-->
+<!--              <Button v-if="goods.complainStatus == 'NO_APPLY'" @click="complain(order.order.sn, goodsIndex)" type="warning" class="fontsize_12" size="small">投诉</Button>-->
             </td>
           </tr>
         </tbody>
@@ -99,34 +100,38 @@
       <!-- 订单价格 -->
       <div class="order-price">
         <div>
-          <span>商品件数：</span><span>{{ order.order.goodsNum }}件</span>
+          <span>商品件数：</span><span>{{ order.orderDetailList.length }}件</span>
         </div>
         <div>
-          <span>商品总价：</span><span>{{ order.order.goodsPrice | unitPrice("￥") }}</span><br>
+          <span>商品总价：</span><span>{{ order.finalPrice | unitPrice("￥") }}</span><br>
         </div>
         <div>
-          <span>运费：</span><span>+{{ order.order.freightPrice | unitPrice("￥") }}</span><br>
+          <span>运费：</span><span>+{{ order.freight | unitPrice("￥") }}</span><br>
         </div>
-        <div v-if="order.order.priceDetailDTO.couponPrice"><span>优惠券：</span><span>-{{ order.order.priceDetailDTO.couponPrice || 0 | unitPrice("￥") }}</span></div>
-        <div v-if="order.order.discountPrice"><span>活动优惠：</span><span>-{{ order.order.discountPrice | unitPrice("￥") }}</span></div>
+<!--        <div v-if="order.order.priceDetailDTO.couponPrice"><span>优惠券：</span><span>-{{ order.order.priceDetailDTO.couponPrice || 0 | unitPrice("￥") }}</span></div>-->
+<!--        <div v-if="order.order.discountPrice"><span>活动优惠：</span><span>-{{ order.order.discountPrice | unitPrice("￥") }}</span></div>-->
         <div>
           <span>应付金额：</span>
-          <span class="actrual-price">{{ order.order.flowPrice | unitPrice("￥") }}</span>
+          <span class="actrual-price">{{ order.finalPrice | unitPrice("￥") }}</span>
         </div>
       </div>
     </div>
-    <Modal v-model="cancelAvail" title="请选择取消订单原因" @on-ok="sureCancel" @on-cancel="cancelAvail = false">
-      <RadioGroup v-model="cancelParams.reason" vertical type="button" button-style="solid">
-        <Radio :label="item.reason" v-for="item in cancelReason" :key="item.id">
-           {{item.reason}}
-        </Radio>
-      </RadioGroup>
-    </Modal>
+<!--    <Modal v-model="cancelAvail" title="请选择取消订单原因" @on-ok="sureCancel" @on-cancel="cancelAvail = false">-->
+<!--      <RadioGroup v-model="cancelParams.reason" vertical type="button" button-style="solid">-->
+<!--        <Radio :label="item.reason" v-for="item in cancelReason" :key="item.id">-->
+<!--           {{item.reason}}-->
+<!--        </Radio>-->
+<!--      </RadioGroup>-->
+<!--    </Modal>-->
   </div>
 </template>
 <script>
+
 import { orderDetail, getTraces, sureReceived, cancelOrder } from '@/api/order.js';
 import { afterSaleReason } from '@/api/member';
+
+import { getOrderAndDetailByParams } from '@/api/mall-order/order'
+
 export default {
   name: 'order-detail',
   data () {
@@ -143,14 +148,15 @@ export default {
     };
   },
   methods: {
+    // 跳转商品详情
     goodsDetail (skuId, goodsId) {
-      // 跳转商品详情
       let routeUrl = this.$router.resolve({
         path: '/goodsDetail',
         query: { skuId, goodsId }
       });
       window.open(routeUrl.href, '_blank');
     },
+
     // 跳转店铺首页
     shopPage (id) {
       let routeUrl = this.$router.resolve({
@@ -159,21 +165,36 @@ export default {
       });
       window.open(routeUrl.href, '_blank');
     },
-    getDetail () { // 获取订单详情
-      orderDetail(this.$route.query.sn).then(res => {
-        if (res.success) {
-          this.order = res.result;
-          this.progressList = res.result.orderLogs
+
+    // getDetail () { // 获取订单详情
+    //   orderDetail(this.$route.query.sn).then(res => {
+    //     if (res.success) {
+    //       this.order = res.result;
+    //       this.progressList = res.result.orderLogs
+    //     }
+    //   })
+    // },
+    // 获取订单详情
+    getDetail () {
+      var params = this.axios.paramsHandler({
+        code: this.$route.query.code
+      });
+      getOrderAndDetailByParams(params).then(({data}) => {
+        if (data && data.code=='200') {
+          console.log("data==",data)
+          this.order = data.data;
         }
       })
     },
+
     traces () { // 物流信息
-      getTraces(this.$route.query.sn).then(res => {
-        if (res.success) {
-          this.logistics = res.result
-        }
-      })
+      // getTraces(this.$route.query.sn).then(res => {
+      //   if (res.success) {
+      //     this.logistics = res.result
+      //   }
+      // })
     },
+
     received (sn) { // 确认收货
       sureReceived(sn).then(res => {
         if (res.success) {

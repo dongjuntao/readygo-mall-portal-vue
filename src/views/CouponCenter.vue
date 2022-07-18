@@ -161,7 +161,7 @@ export default {
   @import '../assets/styles/coupon.scss';
   .content{
     width: 100%;
-    background-color: #fff;
+    background-color: #f4f4f4;
 
     > div {
       margin: 10px auto;

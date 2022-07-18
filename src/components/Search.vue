@@ -142,7 +142,7 @@ export default {
 .logo-img {
   position: absolute;
   left: -360px;
-  top: -9px;
+  //top: -9px;
   width: 150px;
   cursor: pointer;
 }

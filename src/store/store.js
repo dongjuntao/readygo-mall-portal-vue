@@ -11,7 +11,7 @@ export default new Vuex.Store({
   state: {
     navList: [], // 首页快捷导航
     cartNum: storage.getItem('cartNum') || 0,
-    logoImg: require('@/assets/images/logo2.png'),
+    logoImg: require('@/assets/images/logo.png'),
     hotWordsList: storage.getItem('hotWordsList'),
     category: JSON.parse(localStorage.getItem('category'))
   },

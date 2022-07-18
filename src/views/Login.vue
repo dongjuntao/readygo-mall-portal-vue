@@ -13,7 +13,7 @@
       <Carousel loop :autoplay-speed="5000" class="login-carousel" arrow="never">
         <CarouselItem>
           <div class="demo-carousel" @click='$refs.verify.show = false'>
-            <img src="https://wanmi-b2b.oss-cn-shanghai.aliyuncs.com/201811141632252680" />
+            <img width="100%" height="100%" src="@/assets/images/login/login-background.jpg">
           </div>
         </CarouselItem>
       </Carousel>
@@ -39,7 +39,7 @@
             </i-input>
           </FormItem>
           <FormItem>
-            <Button type="error" @click="useVerify" long>登录</Button>
+            <Button type="warning" @click="useVerify" long>登录</Button>
           </FormItem>
         </Form>
         <div class="regist">
@@ -165,7 +165,7 @@ export default {
   z-index: 1;
 
   box-shadow: 0 1px 1px #ddd;
-  background-color: #fff;
+  background-color: #f4f4f4;
 
   .logo-box {
     width: 80%;
@@ -205,8 +205,8 @@ export default {
   width: 350px;
   box-sizing: border-box;
   position: absolute;
-  top: 80px;
-  right: 15%;
+  top: 150px;
+  right: 60%;
   padding: 20px;
   background: rgba(255, 255, 255, 0.8);
   .account-number {
@@ -269,7 +269,7 @@ export default {
 }
 .foot {
   position: fixed;
-  bottom: 4vh;
+  bottom: 1vh;
   width: 368px;
   left: calc(50% - 184px);
   color: rgba(0, 0, 0, 0.45);
