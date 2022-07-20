@@ -27,7 +27,7 @@
       <!-- 展开分类 -->
       <div
         class="detail-item-panel"
-        :style="{'minHeight': large?'470px':'340px'}"
+        :style="{'minHeight': large?'470px':'450px'}"
         v-show="panel"
         @mouseenter="panel = true"
         @mouseleave="panel = false"
@@ -217,7 +217,7 @@ export default {
   padding: 0px;
   color: #000;
   background-color: #ffffff;
-  height: 340px;
+  height: 450px;
   overflow: hidden;
 }
 .large-nav{
@@ -252,7 +252,7 @@ export default {
 /*显示商品详细信息*/
 .detail-item-panel {
   width: 1000px;
-  min-height: 340px;
+  min-height: 450px;
   background-color: #fff;
   box-shadow: 0px 0px 15px #ccc;
   position: absolute;

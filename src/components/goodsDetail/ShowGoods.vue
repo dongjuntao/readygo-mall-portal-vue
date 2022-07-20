@@ -238,7 +238,6 @@ export default {
 
     //加入购物车
     addShoppingCartBtn() {
-      console.log("this.detail == ", this.detail)
       var params = this.axios.paramsHandler({
         merchantId: this.detail.data.adminUserId
       });
@@ -262,30 +261,45 @@ export default {
         this.loading = false;
       });
     },
+    // buyNow() {
+    //   // 立即购买
+    //   const params = {
+    //     num: this.count,
+    //     skuId: this.goodsDetail.id,
+    //     cartType: "BUY_NOW",
+    //   };
+    //   // 虚拟商品购买
+    //   if (this.goodsDetail.goodsType === "VIRTUAL_GOODS") {
+    //     params.cartType = "VIRTUAL";
+    //   }
+    //   this.loading1 = true;
+    //   addCartGoods(params)
+    //     .then((res) => {
+    //       this.loading1 = false;
+    //       if (res.success) {
+    //         this.$router.push({ path: "/pay", query: { way: params.cartType } });
+    //       } else {
+    //         this.$Message.warning(res.message);
+    //       }
+    //     })
+    //     .catch(() => {
+    //       this.loading1 = false;
+    //     });
+    // },
+
+    //点击立即购买，先加入购物车，在进行结算
     buyNow() {
       // 立即购买
-      const params = {
-        num: this.count,
-        skuId: this.goodsDetail.id,
-        cartType: "BUY_NOW",
-      };
-      // 虚拟商品购买
-      if (this.goodsDetail.goodsType === "VIRTUAL_GOODS") {
-        params.cartType = "VIRTUAL";
-      }
-      this.loading1 = true;
-      addCartGoods(params)
-        .then((res) => {
-          this.loading1 = false;
-          if (res.success) {
-            this.$router.push({ path: "/pay", query: { way: params.cartType } });
-          } else {
-            this.$Message.warning(res.message);
+      this.$router.push(
+        { path: "/pay",
+          query: {
+            count: this.count,
+            goodsId: this.detail.data.id,
+            skuId: this.currentSku.id,
+            cartType: "BUY_NOW"
           }
-        })
-        .catch(() => {
-          this.loading1 = false;
-        });
+        }
+      );
     },
 
     // 收藏商品 / 取消收藏

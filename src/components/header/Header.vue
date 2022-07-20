@@ -2,7 +2,7 @@
   <div class="box">
     <div class="nav">
       <ul class="location">
-        <li v-if="$route.path.includes('home')" style="margin-left:10px"><router-link to="/">首页</router-link></li>
+        <li v-if="$route.path.includes('home')" style="margin-left:10px"><router-link to="/">商城首页</router-link></li>
       </ul>
       <ul class="detail">
         <li class="first" v-show="!userInfo.userName">
@@ -41,26 +41,26 @@
               <span @mouseenter="getCartList"><Icon size="18" type="ios-cart-outline"></Icon>购物车</span>
             </router-link>
             <DropdownMenu slot="list">
-              <div class="shopping-cart-null" style="width:200px" v-show="shoppingCart.length <= 0">
+              <div class="shopping-cart-null" style="width:200px" v-show="cartList.length <= 0">
                 <Icon type="ios-cart-outline" class="cart-null-icon"></Icon>
                 <span>你的购物车没有宝贝哦</span>
                 <span>赶快去添加商品吧~</span>
               </div>
-              <div class="shopping-cart-list" v-show="shoppingCart.length > 0">
-                <div class="shopping-cart-box" v-for="(item, index) in shoppingCart" @click="goToPay" :key="index">
+              <div class="shopping-cart-list" v-show="cartList.length > 0">
+                <div class="shopping-cart-box" v-for="(item, index) in cartList" @click="goToPay" :key="index">
                   <div class="shopping-cart-img">
-                    <img :src="item.goodsSku.thumbnail" class="hover-pointer" />
+                    <img :src="item.cartGoodsList[0].image" class="hover-pointer" />
                   </div>
                   <div class="shopping-cart-info">
                     <div class="shopping-cart-title ">
-                      <p class="hover-pointer goods-title ellipsis">{{ item.goodsSku.goodsName }}</p>
+                      <p class="hover-pointer goods-title ellipsis">{{ item.cartGoodsList[0].name }}</p>
                     </div>
                     <div class="shopping-cart-detail">
                       <p>
                         数量:
-                        <span class="shopping-cart-text">{{ item.num }}</span>
+                        <span class="shopping-cart-text">{{ item.cartGoodsList[0].count }}</span>
                         价钱:
-                        <span class="shopping-cart-text">{{ item.purchasePrice | unitPrice('￥') }}</span>
+                        <span class="shopping-cart-text">{{ item.cartGoodsList[0].sellingPrice | unitPrice('￥') }}</span>
                       </p>
                     </div>
                   </div>
@@ -85,6 +85,9 @@ import storage from '@/plugins/storage.js';
 import { cartGoodsAll } from '@/api/cart.js';
 import { getUserInfo, clearLoginInfo } from '@/utils/auth'
 import { logout } from '@/api/mall-member/member'
+
+import { getCartList } from '@/api/mall-cart/cart'
+
 export default {
   name: 'M-Header',
   created () {
@@ -94,7 +97,7 @@ export default {
   data () {
     return {
       userInfo: {}, // 用户信息
-      shoppingCart: [] // 购物车
+      cartList: [] // 购物车
     };
   },
   computed: {
@@ -179,10 +182,20 @@ export default {
     getCartList () {
       // 获取购物车列表
       if (this.userInfo.userName) {
-        cartGoodsAll().then((res) => {
-          this.shoppingCart = res.result.skuList;
-          this.$store.commit('SET_CARTNUM', this.shoppingCart.length);
-          this.Cookies.setItem('cartNum', this.shoppingCart.length);
+        var params = this.axios.paramsHandler({id: this.$route.query.id})
+        getCartList(params).then(({data}) => {
+          if (data && data.code=='200') {
+            var result = data.data.cartMerchantList;
+            if (result) {
+              this.cartList = result
+              console.log("cartList===",result)
+              this.$store.commit('SET_CARTNUM', data.data.checkedTotalCount);
+              this.Cookies.setItem('cartNum', data.data.checkedTotalCount);
+            }else {
+              this.$store.commit('SET_CARTNUM', 0);
+              this.Cookies.setItem('cartNum', 0);
+            }
+          }
         });
       }
     }

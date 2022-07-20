@@ -286,7 +286,14 @@ export default {
     //商家及商品信息
     getPayCartList() {
       this.$Spin.show()
-      var params =  this.axios.paramsHandler({});
+      var params =  this.axios.paramsHandler(
+        {
+          cartType: this.$route.query.cartType,
+          count: this.$route.query.count,
+          skuId: this.$route.query.skuId,
+          goodsId: this.$route.query.goodsId
+        }
+      );
       getPayInfoGoods(params).then(({data}) => {
         if (data && data.code === "200") {
           this.totalPrice = data.data.totalPrice;
@@ -294,7 +301,6 @@ export default {
           this.finalPrice = data.data.finalPrice;
           this.discountPrice = data.data.discountPrice;
           this.goodsList = data.data.payMerchantList;
-          console.log("this.goodsList===", this.goodsList)
         } else {
           this.$Message.error(data.message)
         }

@@ -210,7 +210,7 @@ export default {
     // 跳转支付页面
     pay() {
       if (this.checkedTotalCount) {
-        this.$router.push({ path: "/pay", query: { way: "CART" } });
+        this.$router.push({ path: "/pay", query: { cartType: "CART" } });
       } else {
         this.$Message.warning("请至少选择一件商品");
       }

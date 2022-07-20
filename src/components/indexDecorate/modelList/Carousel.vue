@@ -12,7 +12,7 @@
                 :src="item.img"
                 width="790"
                 @click="linkTo(item.url)"
-                height="340"
+                height="450"
                 class="hover-pointer"
               />
             </div>
@@ -103,14 +103,14 @@ export default {
 <style scoped lang="scss">
 .model-carousel {
   width: 1200px;
-  height: 340px;
+  height: 450px;
   overflow: hidden;
 }
 
 /* 导航主体 */
 .nav-body {
   width: 1200px;
-  height: 340px;
+  height: 450px;
   margin: 0px auto;
 }
 

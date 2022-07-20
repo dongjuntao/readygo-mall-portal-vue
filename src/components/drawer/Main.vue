@@ -25,21 +25,19 @@ import Storage from '@/plugins/storage.js';
 import Configuration from './config';
 import drawerPage from './Drawer'
 import {cartCount} from '@/api/cart.js'
+import {getUserInfo} from '@/utils/auth'
 export default {
   name: 'Main',
   data () {
     return {
       resetConfig: Configuration, // 菜单项
       handleDrawer: false, // 是否可展开
-      drawerData: '' // 菜单基础数据
+      drawerData: '', // 菜单基础数据
+      userInfo: {} //用户信息
     }
   },
   components: {drawerPage},
   computed: {
-    // 用户信息
-    userInfo () {
-      return Storage.getItem('userInfo');
-    },
     // 购物车商品数量
     cartNum () {
       return this.$store.state.cartNum
@@ -96,6 +94,14 @@ export default {
         this.$store.commit('SET_CARTNUM', res.result)
         this.Cookies.setItem('cartNum', res.result)
       })
+    },
+
+    /**
+     * cookie中获取当前登录的用户信息
+     */
+    getUserInfo() {
+      var userInfo = JSON.parse(getUserInfo(sessionStorage.getItem("userNameKey")));
+      this.userInfo = userInfo;
     }
   }
 }
