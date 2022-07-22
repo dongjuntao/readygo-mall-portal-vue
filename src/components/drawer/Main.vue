@@ -2,7 +2,7 @@
   <div>
     <div class="wrapper" :style="{right:handleDrawer ? '300px' : '0px'}">
 
-      <div class="barItem" @mouseenter="showCartNum(item)" @click="clickBar(item)" v-for="(item,index) in resetConfig.menuList" :key="index">
+      <div class="barItem" @click="clickBar(item)" v-for="(item,index) in resetConfig.menuList" :key="index">
         <Tooltip placement="left" :content="item.title">
           <Icon size="20" :type="item.icon"/>
           <p class="barTitle" v-if="item.titleShow"> {{item.title}}</p>
@@ -26,6 +26,7 @@ import Configuration from './config';
 import drawerPage from './Drawer'
 import {cartCount} from '@/api/cart.js'
 import {getUserInfo} from '@/utils/auth'
+import {getCartList} from '@/api/mall-cart/cart'
 export default {
   name: 'Main',
   data () {
@@ -33,22 +34,17 @@ export default {
       resetConfig: Configuration, // 菜单项
       handleDrawer: false, // 是否可展开
       drawerData: '', // 菜单基础数据
-      userInfo: {} //用户信息
+      userInfo: {}, //用户信息
+      cartNum: 0 //购物车数量
     }
   },
   components: {drawerPage},
-  computed: {
-    // 购物车商品数量
-    cartNum () {
-      return this.$store.state.cartNum
-    }
+
+  created () {
+    this.getCartList();
   },
   methods: {
-    showCartNum (item) { // 获取购物车数量
-      if (this.userInfo && item.title === '购物车') {
-        this.getCartList()
-      }
-    },
+
     clickBar (val) { // tabbar点击操作
       if (!this.userInfo) {
         this.$Modal.confirm({
@@ -90,10 +86,15 @@ export default {
       window.open(routerUrl.href, '_blank')
     },
     getCartList () { // 获取购物车列表
-      cartCount().then(res => {
-        this.$store.commit('SET_CARTNUM', res.result)
-        this.Cookies.setItem('cartNum', res.result)
-      })
+      var params = this.axios.paramsHandler({})
+      getCartList(params).then(({data}) => {
+        if (data && data.code=='200') {
+          var result = data.data.cartMerchantList;
+          if (result) {
+            this.cartNum = data.data.checkedTotalCount
+          }
+        }
+      });
     },
 
     /**

@@ -261,33 +261,8 @@ export default {
         this.loading = false;
       });
     },
-    // buyNow() {
-    //   // 立即购买
-    //   const params = {
-    //     num: this.count,
-    //     skuId: this.goodsDetail.id,
-    //     cartType: "BUY_NOW",
-    //   };
-    //   // 虚拟商品购买
-    //   if (this.goodsDetail.goodsType === "VIRTUAL_GOODS") {
-    //     params.cartType = "VIRTUAL";
-    //   }
-    //   this.loading1 = true;
-    //   addCartGoods(params)
-    //     .then((res) => {
-    //       this.loading1 = false;
-    //       if (res.success) {
-    //         this.$router.push({ path: "/pay", query: { way: params.cartType } });
-    //       } else {
-    //         this.$Message.warning(res.message);
-    //       }
-    //     })
-    //     .catch(() => {
-    //       this.loading1 = false;
-    //     });
-    // },
 
-    //点击立即购买，先加入购物车，在进行结算
+    //点击立即购买
     buyNow() {
       // 立即购买
       this.$router.push(
@@ -306,14 +281,14 @@ export default {
     async collect() {
       // 取消收藏商品
       if (this.isCollected) {
-        var postData = this.axios.paramsHandler({goodsId: this.goodsDetail.id});
+        var postData = this.axios.paramsHandler({goodsId: this.goodsDetail.id, merchantId: this.goodsDetail.adminUserId});
         deleteCollectGoods(postData).then(({data}) => {
           if (data && data.code == '200') {
             this.isCollected = false
           }
         });
       } else { //收藏商品
-        var postData = this.axios.dataHandler({goodsId: this.goodsDetail.id});
+        var postData = this.axios.dataHandler({goodsId: this.goodsDetail.id, merchantId: this.goodsDetail.adminUserId});
         saveCollectGoods(postData).then(({data}) => {
           if (data && data.code == '200') {
             this.isCollected = true

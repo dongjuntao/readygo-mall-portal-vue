@@ -122,7 +122,7 @@
               </div>
               <div class="width_100">
                 <span class="handle-btn" v-if="!goods.errorMessage" @click="deleteGoods(0,goods.id)">删除</span>
-                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.goodsId)">收藏</span>
+                <span class="handle-btn" v-if="!goods.errorMessage" @click="collectGoods(goods.goodsId, shop.merchantId)">收藏</span>
               </div>
               <div class="error-goods" v-if="goods.errorMessage">
                 <div>{{ goods.errorMessage }}</div>
@@ -233,8 +233,8 @@ export default {
 
     //---------------------以下新加----------------------------
     // 收藏商品
-    collectGoods(id) {
-      var postData = this.axios.dataHandler({ goodsId: id });
+    collectGoods(goodsId, merchantId) {
+      var postData = this.axios.dataHandler({ goodsId: goodsId, merchantId: merchantId });
       this.$Modal.confirm({
         title: "收藏商品",
         content: "<p>商品收藏后可在个人中心我的收藏查看</p>",
@@ -328,6 +328,7 @@ export default {
             this.totalPrice = data.data.totalPrice;
             this.totalCount = data.data.totalCount;
             this.cartList = result
+            console.log("this.cartList == ", this.cartList)
             for (var i=0; i<result.length; i++) {
               var cartGoodsList = result[i].cartGoodsList;
               var shopChecked = true; //该店铺全选中

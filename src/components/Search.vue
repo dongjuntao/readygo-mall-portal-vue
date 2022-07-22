@@ -113,7 +113,7 @@ export default {
 <style scoped lang="scss">
 .container {
   margin: 30px auto;
-  width: 460px;
+  width: 600px;
   position: relative;
 }
 .search {
@@ -121,7 +121,7 @@ export default {
   /deep/ .ivu-input.ivu-input-large {
     border: 2px solid $theme_color;
     font-size: 12px;
-    height: 34px;
+    height: 40px;
     &:focus {
       box-shadow: none;
     }
@@ -141,7 +141,7 @@ export default {
 }
 .logo-img {
   position: absolute;
-  left: -360px;
+  left: -280px;
   //top: -9px;
   width: 150px;
   cursor: pointer;

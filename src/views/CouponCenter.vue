@@ -74,15 +74,13 @@ export default {
         this.$Spin.hide()
         this.loading = false
         if (data && data.code == '200') {
-
           this.list = data.data.list
           this.total = data.data.totalCount
-          console.log("this.list = ", this.list)
         }
       }).catch(() => { this.$Spin.hide() })
     },
 
-    // 优惠券可用范围【改造】
+    // 优惠券可用范围
     useScope (type, useScope, merchantName) {
       let shop = '平台';
       let goods = '全部商品'
@@ -100,7 +98,6 @@ export default {
       }
       return `${shop} ${goods} 可用`
     },
-    //新增的-----------------------------end------------
 
     // 搜索优惠券
     search (item) {

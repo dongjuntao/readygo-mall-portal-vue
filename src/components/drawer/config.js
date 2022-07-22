@@ -15,7 +15,7 @@ const config = {
     path: '', // menu点击的路径
     display: true, // 是否显示此menu
     badge: 12,
-    titleShow: true
+    titleShow: false
   },
   {
     icon: 'md-clipboard', // menu的icon

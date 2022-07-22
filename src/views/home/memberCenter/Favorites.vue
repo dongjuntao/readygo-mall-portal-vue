@@ -69,7 +69,6 @@ export default {
           if (data && data.code == '200') {
             this.spinShow = false
             this.list = data.data
-            console.log("this.list==1=",this.list)
           }
         });
       } else if(this.params.type == 'SHOP') {
@@ -78,7 +77,6 @@ export default {
           if (data && data.code == '200') {
             this.spinShow = false
             this.list = data.data
-            console.log("this.list==2=",this.list)
           }
         });
       }

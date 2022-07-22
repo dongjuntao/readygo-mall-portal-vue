@@ -32,13 +32,12 @@
           </div>
         </li>
         <li @click="goUserCenter('/home/MyOrder')"><span class="nav-item hover-color">我的订单</span></li>
-        <li @click="goUserCenter('/home/MyTracks')"><span class="nav-item hover-color">我的足迹</span></li>
-        <li @click="goUserCenter('/home/MsgList')"><span class="nav-item hover-color">我的消息</span></li>
+
         <li v-if="$route.name !== 'Cart'" style="position:relative;">
           <i class="cart-badge" v-show="Number(cartNum)">{{cartNum < 100 ? cartNum : '99'}}</i>
           <Dropdown placement="bottom-start">
             <router-link to="/cart" target="_blank" rel="opener">
-              <span @mouseenter="getCartList"><Icon size="18" type="ios-cart-outline"></Icon>购物车</span>
+              <span><Icon size="18" type="ios-cart-outline"></Icon>购物车</span>
             </router-link>
             <DropdownMenu slot="list">
               <div class="shopping-cart-null" style="width:200px" v-show="cartList.length <= 0">
@@ -49,29 +48,32 @@
               <div class="shopping-cart-list" v-show="cartList.length > 0">
                 <div class="shopping-cart-box" v-for="(item, index) in cartList" @click="goToPay" :key="index">
                   <div class="shopping-cart-img">
-                    <img :src="item.cartGoodsList[0].image" class="hover-pointer" />
+                    <img :src="item.image" class="hover-pointer" />
                   </div>
                   <div class="shopping-cart-info">
                     <div class="shopping-cart-title ">
-                      <p class="hover-pointer goods-title ellipsis">{{ item.cartGoodsList[0].name }}</p>
+                      <p class="hover-pointer goods-title ellipsis">{{ item.name }}</p>
                     </div>
                     <div class="shopping-cart-detail">
                       <p>
                         数量:
-                        <span class="shopping-cart-text">{{ item.cartGoodsList[0].count }}</span>
+                        <span class="shopping-cart-text">{{ item.count }}</span>
                         价钱:
-                        <span class="shopping-cart-text">{{ item.cartGoodsList[0].sellingPrice | unitPrice('￥') }}</span>
+                        <span class="shopping-cart-text">{{ item.sellingPrice | unitPrice('￥') }}</span>
                       </p>
                     </div>
                   </div>
                 </div>
                 <div class="go-to-buy">
-                  <Button type="error" size="small" @click="goToPay">去结账</Button>
+                  <span style="float: right; margin-right: 135px; font-color:#999; font-size: 12px;">共{{cartNum}}件商品</span>
+                  <Button type="error" size="small" @click="goToPay">去购物车</Button>
                 </div>
               </div>
             </DropdownMenu>
           </Dropdown>
         </li>
+        <li @click="goUserCenter('/home/MyTracks')"><span class="nav-item hover-color">我的足迹</span></li>
+        <li @click="goUserCenter('/home/MsgList')"><span class="nav-item hover-color">我的消息</span></li>
 <!--        <li>-->
 <!--          <span class="nav-item" @click="shopEntry">店铺入驻</span>-->
 <!--        </li>-->
@@ -92,20 +94,17 @@ export default {
   name: 'M-Header',
   created () {
     this.getUserInfo();
+    this.getCartList();
   },
 
   data () {
     return {
       userInfo: {}, // 用户信息
-      cartList: [] // 购物车
+      cartList: [], // 购物车
+      cartNum: 0, //购物车数量
     };
   },
-  computed: {
-    // 购物车商品数量
-    cartNum () {
-      return this.$store.state.cartNum;
-    }
-  },
+
   methods: {
     /**
      * cookie中获取当前登录的用户信息
@@ -182,18 +181,19 @@ export default {
     getCartList () {
       // 获取购物车列表
       if (this.userInfo.userName) {
-        var params = this.axios.paramsHandler({id: this.$route.query.id})
+        var params = this.axios.paramsHandler({})
         getCartList(params).then(({data}) => {
           if (data && data.code=='200') {
             var result = data.data.cartMerchantList;
             if (result) {
-              this.cartList = result
-              console.log("cartList===",result)
-              this.$store.commit('SET_CARTNUM', data.data.checkedTotalCount);
-              this.Cookies.setItem('cartNum', data.data.checkedTotalCount);
-            }else {
-              this.$store.commit('SET_CARTNUM', 0);
-              this.Cookies.setItem('cartNum', 0);
+              this.cartList = [];
+              for (var i=0; i<result.length; i++) {
+                var cartGoodsList = result[i].cartGoodsList;
+                for (var j=0; j<cartGoodsList.length; j++) {
+                  this.cartList.push(cartGoodsList[j])
+                }
+              }
+              this.cartNum = data.data.checkedTotalCount
             }
           }
         });
@@ -281,8 +281,8 @@ export default {
 .shopping-cart-list {
   padding: 10px 15px;
   box-sizing: border-box;
-  max-height: 300px;
-  overflow: scroll;
+  max-height: 500px;
+  overflow-y: scroll;
 }
 .shopping-cart-box {
   margin: 8px 0px;
