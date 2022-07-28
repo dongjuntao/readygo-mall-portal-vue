@@ -1,6 +1,10 @@
 # grand-mall-web
 
-> 商城用户端前端工程
+> 莱蒂购商城用户端前端工程
+
+
+## 后端接口
+git@github.com:dongjuntao/readygo-mall-cloud.git
 
 ## Build Setup
 
@@ -9,6 +13,8 @@
 npm install
 
 # serve with hot reload at localhost:8080
+本地启动前请确保安装node.js
+
 npm run dev
 
 # build for production with minification
