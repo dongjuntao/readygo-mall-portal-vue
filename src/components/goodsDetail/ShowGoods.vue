@@ -138,6 +138,14 @@
 
         <br />
 
+        <div class="add-buy-car-box" v-if="isStandard">
+          <div class="item-select">
+            <div class="item-select-title">
+              <p>官方标配</p>
+            </div>
+          </div>
+        </div>
+
         <div class="add-buy-car-box">
           <div class="item-select">
             <div class="item-select-title">
@@ -210,6 +218,7 @@ export default {
       loading: false, // 立即购买loading
       loading1: false, // 加入购物车loading
       isCollected: false, // 是否收藏
+      isStandard: false //是否官方标配
     };
   },
   components: { PicZoom, Promotion },
@@ -299,25 +308,31 @@ export default {
 
     //处理规格参数
     handleSpecification(goodsSkuList) {
-      var extendAttr = JSON.parse(goodsSkuList[0].extendAttr);
-      var formatList = [];
-      for (var i=0; i<extendAttr.length; i++) {
-        var values = [];
-        var specificationsDetailList = extendAttr[i].specificationsDetailList;
-        for (var j=0; j<specificationsDetailList.length; j++) {
-          values.push({value: specificationsDetailList[j].value})
+      if (goodsSkuList[0].extendAttr) {
+        var extendAttr = JSON.parse(goodsSkuList[0].extendAttr);
+        var formatList = [];
+        for (var i=0; i<extendAttr.length; i++) {
+          var values = [];
+          var specificationsDetailList = extendAttr[i].specificationsDetailList;
+          for (var j=0; j<specificationsDetailList.length; j++) {
+            values.push({value: specificationsDetailList[j].value})
+          }
+          formatList.push({name: extendAttr[i].name, values: values})
         }
-        formatList.push({name: extendAttr[i].name, values: values})
-      }
-      this.formatList = formatList;
-      //当前已选择的sku
-      let currentSku = goodsSkuList.filter((i) => i.id == this.$route.query.skuId)[0];
-      if (currentSku) {
-        this.currentSku = currentSku;
-        var extendValue = JSON.parse(currentSku.extendValue);
-        extendValue.forEach((value, _index) => {
-          this.currentSelceted[_index] = value.value;
-        });
+        this.formatList = formatList;
+        //当前已选择的sku
+        let currentSku = goodsSkuList.filter((i) => i.id == this.$route.query.skuId)[0];
+        if (currentSku) {
+          this.currentSku = currentSku;
+          var extendValue = JSON.parse(currentSku.extendValue);
+          extendValue.forEach((value, _index) => {
+            this.currentSelceted[_index] = value.value;
+          });
+        }
+      }else {
+        this.currentSelceted = goodsSkuList[0];
+        this.currentSku = goodsSkuList[0];
+        this.isStandard = true;
       }
     },
 
@@ -588,6 +603,7 @@ export default {
   font-size: 14px;
   margin-right: 15px;
   width: 60px;
+  line-height: 38px;
 }
 
 .item-select-column {

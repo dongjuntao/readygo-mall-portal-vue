@@ -16,13 +16,16 @@
       <!-- 第一级分类 -->
       <div class="nav-side" :class="{'large-nav': large, 'opacity-nav': opacity}" @mouseleave="panel = false">
         <ul>
-          <li v-for="(item, index) in categoryList" :key="index" @mouseenter="showDetail(index)" >
-            <div :style="item.goodsCategoryInfoList.length>1 && idx==0 ? 'height:0px; margin-left:37px;' : ''" v-for="(categoryInfo, idx) in item.goodsCategoryInfoList" >
+          <li v-for="(item, index) in categoryList" :key="index" @mouseenter="showDetail(index)">
+            <div v-for="(categoryInfo, idx) in item.goodsCategoryInfoList"
+                 :key="categoryInfo.categoryId"
+                 :style="'margin-left:' +(40*idx)+'px;margin-top: '+(idx==0?'0':'-18')+'px;'">
               <span class="nav-side-item" @click="goGoodsList(categoryInfo.categoryId)"> {{categoryInfo.categoryName}} </span>
-              <span v-if="idx > 0">/</span>
+              <span v-if="idx < item.goodsCategoryInfoList.length-1">/</span>
             </div>
           </li>
         </ul>
+
       </div>
       <!-- 展开分类 -->
       <div
