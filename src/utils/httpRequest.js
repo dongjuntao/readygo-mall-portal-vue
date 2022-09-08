@@ -30,7 +30,6 @@ http.interceptors.request.use(config => {
  */
 http.interceptors.response.use(response => {
   if(response.data && response.data.code === "401") {
-    Message.error(response.data.message);
     clearLoginInfo()
     router.push({ name: 'login'})
   }

@@ -16,16 +16,13 @@
       <!-- 第一级分类 -->
       <div class="nav-side" :class="{'large-nav': large, 'opacity-nav': opacity}" @mouseleave="panel = false">
         <ul>
-          <li v-for="(item, index) in categoryList" :key="index" @mouseenter="showDetail(index)">
-            <div v-for="(categoryInfo, idx) in item.goodsCategoryInfoList"
-                 :key="categoryInfo.categoryId"
-                 :style="'margin-left:' +(40*idx)+'px;margin-top: '+(idx==0?'0':'-18')+'px;'">
-              <span class="nav-side-item" @click="goGoodsList(categoryInfo.categoryId)"> {{categoryInfo.categoryName}} </span>
-              <span v-if="idx < item.goodsCategoryInfoList.length-1">/</span>
-            </div>
+          <li v-for="(item, index) in categoryList" :key="index" @mouseenter="showDetail(index)" >
+            <span v-for="(second, secIndex) in item.goodsCategoryInfoList" :key="secIndex">
+              <span v-if="secIndex > 0"> /</span>
+              <span @click="goGoodsList(second.categoryId)" class="nav-side-item">{{second.categoryName}}</span>
+            </span>
           </li>
         </ul>
-
       </div>
       <!-- 展开分类 -->
       <div
@@ -235,7 +232,7 @@ export default {
 .nav-side ul {
   width: 100%;
   padding: 0px;
-  padding-top: 5px;
+  padding-top: 10px;
   list-style: none;
 }
 .nav-side li {

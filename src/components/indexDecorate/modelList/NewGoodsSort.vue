@@ -10,8 +10,8 @@
           <div v-if="item" :key="index" @click="linkTo(item.url)" class="hover-pointer">
             <img :src="item.images.split(',')[0]" width="80" height="80" alt="" />
             <div>
-              <div>{{ item.name }}</div>
-              <div>{{ item.description }}</div>
+              <div>{{ item.name.length>25 ? item.name.substring(0,25)+"..." : item.name }}</div>
+              <div>{{ item.description.length>25 ? item.description.substring(0,25)+"..." : item.description }}</div>
             </div>
           </div>
         </template>
@@ -69,7 +69,7 @@ export default {
     opacity: 90%;
     align-items: center;
     justify-content: space-between;
-    height: 50px;
+    height: 40px;
     padding: 0 10px;
     background: #f64494;
     color: #fff;
