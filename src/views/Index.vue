@@ -54,6 +54,7 @@ export default {
       getIndexData().then(({data}) => {
         if (data && data.code == '200') {
           this.modelForm = data.data;
+          console.log("this.modelForm == ",this.modelForm)
           storage.setItem('navList', this.modelForm.list[0])
           this.showNav = true
         }

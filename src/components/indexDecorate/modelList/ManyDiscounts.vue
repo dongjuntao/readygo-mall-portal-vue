@@ -7,11 +7,11 @@
       </div>
       <div class="manyDiscounts-content">
         <template v-for="(item, index) in manyDiscounts.options.list">
-          <div v-if="item" :key="index" @click="linkTo(item.url)" class="hover-pointer">
-            <img :src="item.images.split(',')[0]" width="80" height="80" alt="" />
+          <div v-if="item" :key="index" @click="goGoodsDetail(item.goodsSkuList[0].id, item.id)" class="hover-pointer">
+            <img :src="item.images.split(',')[0]" width="90" height="90" alt="" />
             <div>
-              <div>{{ item.name.length>25 ? item.name.substring(0,25)+"..." : item.name }}</div>
-              <div>{{ item.description.length>25 ? item.description.substring(0,25)+"..." : item.description }}</div>
+              <div>{{ item.name.length>50 ? item.name.substring(0,50)+"..." : item.name }}</div>
+              <div style="color: red;">¥ {{ item.goodsSkuList[0].sellingPrice }}</div>
             </div>
           </div>
         </template>
@@ -32,6 +32,16 @@ export default {
     return {
       manyDiscounts: this.data //商品推荐
     };
+  },
+  methods: {
+    goGoodsDetail (skuId, goodsId) {
+      // 跳转商品详情
+      let routeUrl = this.$router.resolve({
+        path: '/goodsDetail',
+        query: { skuId: skuId, id: goodsId }
+      });
+      window.open(routeUrl.href, '_blank');
+    }
   }
 };
 </script>
