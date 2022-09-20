@@ -6,7 +6,7 @@
         <span class="hover-pointer" @click="linkTo(manyDiscounts.url)">{{ manyDiscounts.secondName }}&gt;</span>
       </div>
       <div class="manyDiscounts-content">
-        <template v-for="(item, index) in manyDiscounts.options.list">
+        <template v-for="(item, index) in manyDiscounts.data">
           <div v-if="item" :key="index" @click="goGoodsDetail(item.goodsSkuList[0].id, item.id)" class="hover-pointer">
             <img :src="item.images.split(',')[0]" width="90" height="90" alt="" />
             <div>
@@ -35,6 +35,7 @@ export default {
   },
   methods: {
     goGoodsDetail (skuId, goodsId) {
+      console.log("manyDiscounts==",this.manyDiscounts)
       // 跳转商品详情
       let routeUrl = this.$router.resolve({
         path: '/goodsDetail',

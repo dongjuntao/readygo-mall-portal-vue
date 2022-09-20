@@ -6,7 +6,7 @@
         <span class="hover-pointer" @click="linkTo(newGoodsSort.url)">{{ newGoodsSort.secondName }}&gt;</span>
       </div>
       <div class="newGoodsSort-content">
-        <template v-for="(item, index) in newGoodsSort.options.list">
+        <template v-for="(item, index) in newGoodsSort.data">
           <div v-if="item" :key="index" @click="goGoodsDetail(item.goodsSkuList[0].id, item.id)" class="hover-pointer">
             <img :src="item.images.split(',')[0]" width="90" height="90" alt="" />
             <div>

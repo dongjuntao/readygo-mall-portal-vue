@@ -2,9 +2,9 @@
 
 > 莱蒂购商城用户端前端工程
 
-
 ## 后端接口
-git@github.com:dongjuntao/readygo-mall-cloud.git
+github: https://github.com/dongjuntao/readygo-mall-cloud
+gitee: https://gitee.com/dongjuntao/readygo-mall-cloud
 
 ## Build Setup
 

@@ -7,13 +7,13 @@
     <ul class="time-line">
       <template v-for="(time, index) in list">
         <li v-if="index < 5" @click="currIndex = index" :key="index" :class="{'currTimeline': currIndex === index}">
-          <div>{{time.timeLine+':00'}}</div>
+          <div>{{time.isTomorrow ? "明日"+time.timeLine+':00' : time.timeLine+':00'}}</div>
           <div v-if="currIndex === index">
-            <p>{{nowHour >= time.timeLine ? '秒杀中' : '即将开始'}}</p>
-            <p>{{nowHour >= time.timeLine ? '距结束' : '距开始'}}&nbsp;{{currTime}}</p>
+            <p>{{nowHour >= time.timeLine && !time.isTomorrow ? '秒杀中' : '即将开始'}}</p>
+            <p>{{nowHour >= time.timeLine && !time.isTomorrow ? '距结束' : '距开始'}}&nbsp;{{currTime}}</p>
           </div>
           <div v-else class="not-curr">
-            {{nowHour >= time.timeLine ? '秒杀中' : '即将开始'}}
+            {{nowHour >= time.timeLine && !time.isTomorrow ? '秒杀中' : '即将开始'}}
           </div>
         </li>
       </template>
@@ -26,21 +26,21 @@
         class="goods-show-info"
         v-for="(item, index) in goodsList"
         :key="index"
-        @click="goGoodsDetail(item.skuId, item.goodsId)"
+        @click="goGoodsDetail(item.goodsSkuList[0].id, item.id)"
       >
         <div class="goods-show-img">
-          <img width="220" height="220" :src="item.goodsImage" />
+          <img width="220" height="220" :src="item.images.split(',')[0]" />
         </div>
         <div class="goods-show-price">
           <span>
-            <span class="seckill-price text-danger">{{
-              item.price | unitPrice("￥")
-            }}</span>
-            <span style="color:#999;text-decoration:line-through;">{{item.originalPrice | unitPrice('￥')}}</span>
+            <span class="seckill-price text-danger">
+              {{ item.seckillGoodsInfo.seckillGoodsSkuList[0].seckillPrice | unitPrice('￥') }}
+            </span>
+            <span style="color:#999;text-decoration:line-through;">{{item.goodsSkuList[0].originalPrice | unitPrice('￥')}}</span>
           </span>
         </div>
         <div class="goods-show-detail">
-          <span>{{ item.goodsName }}</span>
+          <span>{{ item.name }}</span>
         </div>
         <div class="goods-seckill-btn" :class="{'goods-seckill-btn-gray' : nowHour < list[currIndex].timeLine}">{{nowHour >= list[currIndex].timeLine ? '立即抢购' : '即将开始'}}</div>
         <div class="goods-show-num">
@@ -55,7 +55,8 @@
   </div>
 </template>
 <script>
-import {seckillByDay} from '@/api/promotion'
+import { afterFiveBatch, getSeckillData } from '@/api/mall-admin/mall-homepage-data'
+
 export default {
   data () {
     return {
@@ -78,7 +79,7 @@ export default {
       this.interval = null
       this.nowHour = new Date().getHours()
       this.countDown(val)
-      this.goodsList = this.list[val].seckillGoodsList
+      this.getSeckillData(this.list[val].dateTime)
     },
     diffSeconds (val) {
       const hours = Math.floor(val / 3600);
@@ -103,20 +104,42 @@ export default {
     }
   },
   methods: {
-    getListByDay () { // 当天秒杀活动
-      seckillByDay().then(res => {
-        if (res.success) {
-          this.list = res.result
-          this.goodsList = this.list[0].seckillGoodsList
-          this.countDown(this.currIndex)
+    //获取首页秒杀数据
+    getSeckillData (dateTime) {
+      var params = this.axios.paramsHandler({dateTime: !dateTime?null:dateTime})
+      getSeckillData(params).then(({data}) => {
+        if (data && data.code == '200') {
+          this.goodsList = data.data[0].data
+          console.log("this.goodsList==",this.goodsList)
         }
-      })
+      });
     },
-    goGoodsDetail (skuId, goodsId) {
+    // 获取分类数据
+    afterFiveBatch () {
+      afterFiveBatch().then(({data}) => {
+        if (data && data.code == '200') {
+          var result = data.data;
+          var list = [];
+          for (var i=0; i<result.length; i++) {
+            var dateTime = result[i];
+            list.push({
+              timeLine: getTimeLine(dateTime).hour,
+              isTomorrow: getTimeLine(dateTime).isTomorrow,
+              dateTime: dateTime
+            });
+          }
+          this.list = list;
+          this.countDown(this.currIndex)
+          this.getSeckillData(result[0]);//进入页面默认显示正在秒杀中的数据
+        }
+      });
+    },
+
+    goGoodsDetail (skuId, id) {
       // 跳转商品详情
       let routeUrl = this.$router.resolve({
         path: '/goodsDetail',
-        query: { skuId, goodsId }
+        query: { skuId, id }
       });
       window.open(routeUrl.href, '_blank');
     },
@@ -126,14 +149,12 @@ export default {
       let currTime = new Date().getTime()
       let actTime = 0;
       let nowHour = new Date().getHours(); // 当前小时数
-      if (this.list[currIndex].timeLine > nowHour) { // 活动未开始
+      if (nowHour < this.list[currIndex].timeLine) { // 活动未开始（即将开始）
         actTime = zeroTime + this.list[currIndex].timeLine * 3600 * 1000
-      } else if (this.list[currIndex].timeLine <= nowHour) { // 活动进行中
-        if (currIndex === this.list.length - 1) { // 如果是最后一个活动，直到24点结束
-          actTime = zeroTime + 24 * 3600 * 1000
-        } else {
-          actTime = zeroTime + this.list[currIndex + 1].timeLine * 3600 * 1000
-        }
+      } else if (nowHour >= this.list[currIndex].timeLine && !this.list[currIndex].isTomorrow) { // 活动进行中（当日内）
+        actTime = zeroTime + (this.list[currIndex].timeLine+2) * 3600 * 1000 //当日内每个批次两小时，所以加2小时作为结束时间
+      } else if (nowHour >= this.list[currIndex].timeLine && this.list[currIndex].isTomorrow) { // 次日凌晨
+        actTime = zeroTime + (this.list[currIndex].timeLine+24) * 3600 * 1000
       }
       this.diffSeconds = Math.floor((actTime - currTime) / 1000)
       this.interval = setInterval(() => {
@@ -141,10 +162,30 @@ export default {
       }, 1000)
     }
   },
+
   mounted () {
-    this.getListByDay()
+    this.afterFiveBatch()
   }
 }
+
+function getTimeLine(dateTime) {
+  var newDateTime = new Date(dateTime);
+  var hour = newDateTime.getHours();
+  var date = newDateTime.getDate();
+  //表示不是同一天，是次日
+  if (date != (new Date()).getDate()) {
+    return {
+      isTomorrow: true,
+      hour: hour%2==0 ? hour : hour - 1
+    }
+  }else {
+    return {
+      isTomorrow: false,
+      hour: hour%2==0 ? hour : hour - 1
+    }
+  }
+}
+
 </script>
 <style lang="scss" scoped>
 @import '../../assets/styles/goodsList.scss';
@@ -187,7 +228,7 @@ export default {
       border: 1px solid #999;
       border-radius: 20px;
       padding: 3px 10px;
-      margin-left: 10px;
+      margin-left: 15px;
       font-size: 12px;
       font-weight: normal;
     }
@@ -196,11 +237,11 @@ export default {
     background-color: $theme_color;
     color: #fff;
     >div:nth-child(1) {
-      font-size: 20px;
+      font-size: 15px;
     }
     >div:nth-child(2) {
       font-size: 14px;
-      margin-left: 10px;
+      margin-left: 15px;
     }
   }
 }

@@ -1,11 +1,11 @@
 <template>
-  <div class="model-item" v-if="element && element.key">
+  <div class="model-item" v-if="element">
     <!-- 轮播图模块，包括个人信息，快捷导航模块 -->
     <template v-if="element.type == 'carousel'">
       <model-carousel :data="element" class="mb_20 width_1200_auto"></model-carousel>
     </template>
     <!-- 限时秒杀 待完善 -->
-    <template v-if="element.type == 'seckill' && element.options.list.length">
+    <template v-if="element.type == 'seckill'">
       <seckill :data="element"  class="mb_20 width_1200_auto"></seckill>
     </template>
     <!-- 好货推荐 -->
@@ -52,7 +52,7 @@ export default {
 
 .model-item {
   position: relative;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
 }
 
 .width_1200_auto{

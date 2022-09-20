@@ -4,7 +4,7 @@
       <div class="all-categories hover-pointer" @mouseenter="showFirstList = true" @mouseleave="showFirstList = false">全部商品分类</div>
       <ul class="nav-item" v-if="showNavBar">
         <li class ="nav-lis"
-          v-for="(item, index) in navList.list"
+          v-for="(item, index) in navList.data"
           :key="index"
           @click="linkTo(item.linkUrl)">
           {{ item.name }}
@@ -95,8 +95,8 @@ export default {
   },
   computed: {
     navList () { // 导航列表
-      if (storage.getItem('navList')) {
-        return JSON.parse(storage.getItem('navList'))
+      if (sessionStorage.getItem('navList')) {
+        return JSON.parse(sessionStorage.getItem('navList'))
       } else {
         return []
       }

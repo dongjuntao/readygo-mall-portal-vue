@@ -20,14 +20,18 @@
 import Search from '@/components/Search';
 import ModelForm from '@/components/indexDecorate/ModelForm';
 import HoverSearch from '@/components/header/hoverSearch';
-import storage from '@/plugins/storage';
-import { getIndexData } from '@/api/mall-admin/mall-homepage-index'
+import { getNavbarData, getCarouselData, getPlateData, getSeckillData } from '@/api/mall-admin/mall-homepage-data'
 import {seckillByDay} from '@/api/promotion'
 
 export default {
   name: 'Index',
   mounted () {
-    this.getIndexData();
+
+    this.getNavbarData();
+    this.getCarouselData();
+    this.getPlateData();
+    this.getSeckillData();
+
     let that = this;
     window.onscroll = function () {
       let top = document.documentElement.scrollTop || document.body.scrollTop;
@@ -40,7 +44,8 @@ export default {
   },
   data () {
     return {
-      modelForm: { list: [] }, // 楼层装修数据
+      // modelForm: { list: [] }, // 楼层装修数据
+      modelForm: [], //楼层装修数据
       topAdvert: {}, // 顶部广告
       showNav: true, // 是否展示分类栏
       topSearchShow: false, // 滚动后顶部搜索栏展示
@@ -49,25 +54,50 @@ export default {
     };
   },
   methods: {
-    getIndexData () {
-      // 获取首页装修数据
-      getIndexData().then(({data}) => {
+    //获取首页导航数据
+    getNavbarData () {
+      getNavbarData().then(({data}) => {
         if (data && data.code == '200') {
-          this.modelForm = data.data;
-          console.log("this.modelForm == ",this.modelForm)
-          storage.setItem('navList', this.modelForm.list[0])
-          this.showNav = true
+          for (var i=0; i<data.data.length; i++) {
+            this.modelForm.push(data.data[i])
+          }
+          sessionStorage.setItem("navList", JSON.stringify(data.data[0]) )
         }
       });
     },
-    async getListByDay () { // 当天秒杀活动
-      const res = await seckillByDay()
-      if (res.success && res.result.length) {
-        return res.result
-      } else {
-        return []
-      }
+    // 获取首页轮播图数据
+    getCarouselData () {
+      getCarouselData().then(({data}) => {
+        if (data && data.code == '200') {
+          for (var i=0; i<data.data.length; i++) {
+            this.modelForm.push(data.data[i])
+          }
+        }
+      });
+    },
+    //获取首页板块数据
+    getPlateData () {
+      getPlateData().then(({data}) => {
+        if (data && data.code == '200') {
+          for (var i=0; i<data.data.length; i++) {
+            this.modelForm.push(data.data[i])
+          }
+        }
+      });
+    },
+
+    //获取首页秒杀数据
+    getSeckillData () {
+      getSeckillData().then(({data}) => {
+        if (data && data.code == '200') {
+          for (var i=0; i<data.data.length; i++) {
+            this.modelForm.push(data.data[i])
+          }
+        }
+      });
     }
+
+
   },
   components: {
     Search,

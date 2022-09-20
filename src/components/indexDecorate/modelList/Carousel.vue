@@ -6,7 +6,7 @@
       <div class="nav-content">
         <!-- 轮播图 -->
         <Carousel autoplay>
-          <CarouselItem v-for="(item, index) in data.options.list" :key="index">
+          <CarouselItem v-for="(item, index) in data.data" :key="index">
             <div style="overflow: hidden">
               <img
                 :src="item.img"

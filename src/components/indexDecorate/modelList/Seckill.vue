@@ -14,12 +14,14 @@
     </div>
     <swiper :options="swiperOption" ref="mySwiper">
       <swiper-slide v-for="(item,index) in goodsList" :key="index">
-        <div class="content hover-pointer" @click="goToSeckill">
-          <img :src="item.goodsImage" width="140" height="140" :alt="item.goodsName">
-          <div class="ellipsis">{{item.goodsName}}</div>
+        <div class="content hover-pointer" @click="goodsDetail(item.goodsSkuList[0].id, item.id)">
+          <img :src="item.images.split(',')[0]" width="140" height="140" :alt="item.name">
+          <div class="ellipsis">{{item.name}}</div>
           <div>
-            <span>{{ item.price | unitPrice('￥') }}</span>
-            <span>{{ item.originalPrice | unitPrice('￥') }}</span>
+            <!--秒杀价-->
+            <span>{{ item.seckillGoodsInfo.seckillGoodsSkuList[0].seckillPrice | unitPrice('￥') }}</span>
+            <!--原价-->
+            <span>{{ item.goodsSkuList[0].originalPrice | unitPrice('￥') }}</span>
           </div>
         </div>
       </swiper-slide>
@@ -50,7 +52,6 @@ export default {
       goodsList: [], // 商品列表
       actStatus: 0, // 0 未开始  1 进行中
       actName: '限时秒杀', // 活动名称
-      currIndex: 0, // 当前时间段的下标
       currHour: '00', // 当前秒杀场
       diffSeconds: 0, // 倒计时秒数
       hours: 0, // 小时
@@ -109,7 +110,7 @@ export default {
     clearInterval(this.interval);
   },
   mounted () {
-    this.getListByDay()
+    this.getCurrentBatch()
   },
   methods: {
     goToSeckill () { // 跳转秒杀页面
@@ -118,46 +119,44 @@ export default {
       });
       window.open(routeUrl.href, '_blank');
     },
-    countDown (currIndex) { // 倒计时
+
+    //跳转到商品详情页面
+    goodsDetail (skuId, id) {
+      // 跳转商品详情
+      let routeUrl = this.$router.resolve({
+        path: '/goodsDetail',
+        query: { skuId, id }
+      });
+      window.open(routeUrl.href, '_blank');
+    },
+
+    countDown () { // 倒计时
       // 0点时间戳
       let zeroTime = new Date(new Date().toLocaleDateString()).getTime();
       let currTime = new Date().getTime()
       let actTime = 0;
       let nowHour = new Date().getHours(); // 当前小时数
-      if (this.list[currIndex].timeLine > nowHour) { // 活动未开始
+      console.log("nowHour==",nowHour)
+      if (this.list.timeLine > nowHour) { // 活动未开始
         this.actStatus = 0;
-        actTime = zeroTime + this.list[currIndex].timeLine * 3600 * 1000
-      } else if (this.list[currIndex].timeLine <= nowHour) { // 活动进行中
+        actTime = zeroTime + this.list.timeLine * 3600 * 1000
+      } else if (this.list.timeLine <= nowHour) { // 活动进行中
         this.actStatus = 1;
-        if (currIndex === this.list.length - 1) { // 如果是最后一个活动，直到24点结束
-          actTime = zeroTime + 24 * 3600 * 1000
-        } else {
-          actTime = zeroTime + this.list[currIndex + 1].timeLine * 3600 * 1000
-        }
+        actTime = zeroTime + (this.list.timeLine+2) * 3600 * 1000 //每个批次两小时，所以加2小时作为结束时间
       }
-      this.currHour = this.list[this.currIndex].timeLine
+      this.currHour = this.list.timeLine
       this.diffSeconds = Math.floor((actTime - currTime) / 1000)
       this.interval = setInterval(() => {
         this.diffSeconds--
       }, 1000)
     },
-    getListByDay () { // 当天秒杀活动
-      // const list = [
-      //   {
-      //     timeLine: 18,
-      //     seckillGoodsList: [
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12},
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12},
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12},
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12},
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12},
-      //       {goodsImage: 'https://lilishop-oss.oss-cn-beijing.aliyuncs.com/a9593607de404546953055f279fd5d54.png', goodsName: 'dfsdgsdf', originalPrice: 39, price: 12}
-      //     ]
-      //   }
-      // ]
-      this.list = this.data.options.list
-      this.goodsList = this.list[0].seckillGoodsList
-      this.countDown(this.currIndex)
+
+    //当前批次秒杀
+    getCurrentBatch () {
+      this.list = this.data
+      this.goodsList = this.list.data
+      console.log("this.goodsList == ", this.goodsList)
+      this.countDown()
     }
   }
 };
