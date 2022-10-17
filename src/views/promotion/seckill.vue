@@ -56,6 +56,7 @@
 </template>
 <script>
 import { afterFiveBatch, getSeckillData } from '@/api/mall-admin/mall-homepage-data'
+import {deleteOrder} from '@/api/mall-order/order'
 
 export default {
   data () {
@@ -92,7 +93,17 @@ export default {
       this.currTime = filteTime(hours) + ':' + filteTime(minutes) + ':' + filteTime(seconds)
       if (val <= 0) {
         clearInterval(this.interval)
-        this.interval = null
+        this.interval = null;
+        //当前这轮秒杀结束，弹出提示信息，用户确认后刷新页面，重新加载数据
+        this.$Modal.confirm({
+          title: '秒杀结束',
+          content: '本轮秒杀结束，请关注下一轮秒杀</p>',
+          onOk: () => {
+            this.afterFiveBatch();
+          },
+          onCancel: () => {}
+        });
+
       }
       function filteTime (time) {
         if (time < 10) {
@@ -110,7 +121,6 @@ export default {
       getSeckillData(params).then(({data}) => {
         if (data && data.code == '200') {
           this.goodsList = data.data[0].data
-          console.log("this.goodsList==",this.goodsList)
         }
       });
     },

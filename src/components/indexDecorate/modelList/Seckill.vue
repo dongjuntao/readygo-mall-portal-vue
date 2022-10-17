@@ -89,7 +89,8 @@ export default {
       this.seconds = filteTime(seconds)
       if (val <= 0) {
         clearInterval(this.interval)
-        this.interval = null
+        this.interval = null;
+        this.getCurrentBatch();
       }
       function filteTime (time) {
         if (time < 10) {
@@ -136,7 +137,6 @@ export default {
       let currTime = new Date().getTime()
       let actTime = 0;
       let nowHour = new Date().getHours(); // 当前小时数
-      console.log("nowHour==",nowHour)
       if (this.list.timeLine > nowHour) { // 活动未开始
         this.actStatus = 0;
         actTime = zeroTime + this.list.timeLine * 3600 * 1000
@@ -155,7 +155,6 @@ export default {
     getCurrentBatch () {
       this.list = this.data
       this.goodsList = this.list.data
-      console.log("this.goodsList == ", this.goodsList)
       this.countDown()
     }
   }

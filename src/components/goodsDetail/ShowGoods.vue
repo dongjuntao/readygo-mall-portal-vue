@@ -8,52 +8,32 @@
           <pic-zoom :url="imgList[imgIndex].url" :scale="2"></pic-zoom>
         </div>
         <div class="item-detail-img-row">
-          <div
-            class="item-detail-img-small"
-            @mouseover="imgIndex = index"
-            v-for="(item, index) in imgList"
-            :key="index"
-          >
+          <div class="item-detail-img-small" @mouseover="imgIndex = index" v-for="(item, index) in imgList" :key="index">
             <img :src="item.url" />
           </div>
         </div>
-
         <div class="goodsConfig mt_10">
-          <span @click="collect"
-            ><Icon type="ios-heart" :color="isCollected ? '#ed3f14' : '#666'" />{{
-              isCollected ? "已收藏" : "收藏"
-            }}</span
-          >
+          <span @click="collect"><Icon type="ios-heart" :color="isCollected ? '#ed3f14' : '#666'" />{{isCollected ? "已收藏" : "收藏"}}</span>
         </div>
       </div>
       <!-- 右侧商品信息、活动信息、操作展示 -->
       <div class="item-detail-right">
         <div class="item-detail-title">
-          <p>
-            {{ goodsDetail.name }}
-          </p>
+          <p>{{ goodsDetail.name }}</p>
         </div>
         <!-- 限时秒杀 -->
-        <Promotion
-          v-if="promotionMap['SECKILL']"
-          :time="promotionMap['SECKILL'].endTime"
-        ></Promotion>
+<!--        <Promotion v-if="promotionMap['SECKILL']" :time="promotionMap['SECKILL'].endTime"></Promotion>-->
+        <Promotion v-if="seckillConfig" :time="timeToEnd"></Promotion>
 
         <!-- 商品详细 价格、优惠券、促销 -->
         <div class="item-detail-price-row">
           <div class="item-price-left">
             <!-- 秒杀价格 -->
-            <div class="item-price-row" v-if="goodsDetail.promotionPrice && promotionMap['SECKILL']">
+            <div class="item-price-row" v-if="seckillConfig">
               <p>
-                <span class="item-price-title" v-if="promotionMap['SECKILL']"
-                  >秒 &nbsp;杀&nbsp;价</span
-                >
-                <span class="item-price">{{
-                    goodsDetail.promotionPrice | unitPrice("￥")
-                }}</span>
-                <span class="item-price-old">{{
-                    goodsDetail.price | unitPrice("￥")
-                }}</span>
+                <span class="item-price-title" v-if="seckillConfig">秒 &nbsp;杀&nbsp;价</span>
+                <span class="item-price">{{ currentSku.seckillPrice | unitPrice("￥") }}</span>
+                <span class="item-price-old">{{ currentSku.sellingPrice | unitPrice("￥")  }}</span>
               </p>
             </div>
             <!-- 商品原价 -->
@@ -151,7 +131,7 @@
             <div class="item-select-title">
               <p>数量</p>
             </div>
-            <div class="item-select-row">
+            <div class="item-select-row" v-if="seckillConfig">
               <InputNumber
                 :min="1"
                 :max="currentSku.stock"
@@ -161,11 +141,21 @@
               ></InputNumber>
               <span class="inventory"> 库存{{ currentSku.stock }}</span>
             </div>
+            <div class="item-select-row" v-else>
+              <InputNumber
+                :min="1"
+                :max="currentSku.seckillStock"
+                :disabled="currentSku.seckillStock === 0"
+                v-model="count"
+                :precision="0.1"
+              ></InputNumber>
+              <span class="inventory"> 库存{{ currentSku.seckillStock }}</span>
+            </div>
           </div>
 
           <div class="add-buy-car">
-            <Button type="error" :loading="loading" :disabled="currentSku.stock === 0" @click="addShoppingCartBtn">加入购物车</Button>
-            <Button type="warning" :loading="loading1" :disabled="currentSku.stock === 0" @click="buyNow">立即购买</Button>
+            <Button type="error" :loading="loading" :disabled="seckillConfig ? currentSku.seckillStock === 0 : currentSku.stock === 0" @click="addShoppingCartBtn">加入购物车</Button>
+            <Button type="warning" :loading="loading1" :disabled="seckillConfig ? currentSku.seckillStock === 0: currentSku.stock === 0" @click="buyNow">立即购买</Button>
           </div>
 
         </div>
@@ -188,6 +178,8 @@ import { addCartGoods } from "@/api/cart.js";
 import { getUserInfo } from '@/utils/auth'
 import { saveCollectGoods, deleteCollectGoods, isCollected } from '@/api/mall-member/collect-goods'
 import { saveCart } from '@/api/mall-cart/cart'
+import { getSeckillConfig } from '@/api/mall-seckill/seckill-config'
+
 
 export default {
   name: "ShowGoods",
@@ -218,11 +210,28 @@ export default {
       loading: false, // 立即购买loading
       loading1: false, // 加入购物车loading
       isCollected: false, // 是否收藏
-      isStandard: false //是否官方标配
+      isStandard: false, //是否官方标配
+      seckillConfig: null, //秒杀配置
+      timeToEnd: 0 //秒杀倒计时
     };
   },
   components: { PicZoom, Promotion },
   methods: {
+
+    //判断是否是秒杀商品
+    async getSeckillConfig() {
+      var params = this.axios.paramsHandler({goodsId: this.goodsDetail.id});
+      await getSeckillConfig(params).then(({data}) => {
+        if (data && data.code == '200') {
+          if (data.data) {
+            this.seckillConfig = data.data;
+            var thisDay = new Date();
+            var endTime = thisDay.getFullYear()+"-"+(thisDay.getMonth()+1)+"-"+thisDay.getDate() + " "+this.seckillConfig.seckillEndTime;
+            this.timeToEnd = new Date(endTime).getTime();
+          }
+        }
+      });
+    },
 
     //选择商品规格
     select(index, value) {
@@ -334,6 +343,15 @@ export default {
         this.currentSku = goodsSkuList[0];
         this.isStandard = true;
       }
+      //判断是否是秒杀商品，如果是，填入秒杀相关信息【秒杀价，秒杀库存】
+      if (this.seckillConfig) { //是秒杀商品
+        var seckillGoodsSkuList = this.seckillConfig.seckillGoodsSkuList;
+        var currentSeckillSku = seckillGoodsSkuList.filter((seckillGoodsSku) => seckillGoodsSku.goodsSkuId == this.currentSku.id);
+        if (currentSeckillSku) {
+          this.currentSku['seckillPrice'] = currentSeckillSku[0].seckillPrice
+          this.currentSku['seckillStock'] = currentSeckillSku[0].seckillStock
+        }
+      }
     },
 
 
@@ -364,7 +382,7 @@ export default {
       }
     },
   },
-  mounted() {
+  async mounted() {
     // 用户登录才会判断是否收藏
     if (getUserInfo(sessionStorage.getItem("userNameKey"))) {
       var params = this.axios.paramsHandler({goodsId: this.goodsDetail.id});
@@ -381,14 +399,16 @@ export default {
       this.imgList.push({url:image})
     });
 
-    console.log("detail === ", this.detail)
-
     // this.formatSku(this.goodsSpecList);
     // this.promotion();
+
+    //判断是否秒杀情况
+    await this.getSeckillConfig();
 
     //处理规格参数
     this.handleSpecification(this.goodsDetail.goodsSkuList);
     document.title = this.goodsDetail.name;
+
   },
 };
 </script>
