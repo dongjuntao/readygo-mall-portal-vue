@@ -6,7 +6,7 @@
         <Tooltip placement="left" :content="item.title">
           <Icon size="20" :type="item.icon"/>
           <p class="barTitle" v-if="item.titleShow"> {{item.title}}</p>
-          <div class="circle" v-if="item.title === '购物车'">
+          <div class="circle" v-if="item.title === '购物车' && cartNum > 0">
             {{cartNum < 100 ? cartNum : 99}}
           </div>
         </Tooltip>

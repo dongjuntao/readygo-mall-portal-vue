@@ -9,7 +9,7 @@
         </Col>
         <Col :span="16">
           <div class="setDivItem">登录密码</div>
-          <div class="setDivItem theme">互联网账号存在被盗风险，建议您定期更改密码以保护账户安全。</div>
+          <div class="setDivItem theme">密码安全性十分重要，一旦泄露，不法分子可能会登录您的账号，请定期更新密码。</div>
         </Col>
         <Col :span="4">
           <Button @click="modifyPwd">修改密码</Button>
