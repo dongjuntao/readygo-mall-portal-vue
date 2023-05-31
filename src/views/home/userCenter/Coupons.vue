@@ -49,7 +49,7 @@ export default {
         pageSize: 10,
         memberCouponStatus: 'NEW'
       },
-      pageNo: 1,
+      pageNum: 1,
       pageSize: 10,
       useStatus: 0,
       total: 0, // 优惠券总数
@@ -62,14 +62,13 @@ export default {
       this.loading = true;
       var params = this.axios.paramsHandler({
         useStatus: this.useStatus,
-        pageNo: this.pageNo,
+        pageNum: this.pageNum,
         pageSize: this.pageSize
       })
       getReceivedCouponList(params).then(({data}) => {
         this.loading = false
         if (data && data.code == '200') {
           this.list = data.data
-          console.log("this.list.length= ==", this.list)
           this.total = data.data.totalCount
         }
       })
@@ -77,7 +76,7 @@ export default {
     // 切换优惠券状态
     change (index) {
       this.useStatus = this.statusList[index]
-      this.pageNo = 1;
+      this.pageNum = 1;
       this.getList()
     },
     go (item) { // 根据使用条件跳转商品列表页面
@@ -94,12 +93,12 @@ export default {
     },
 
     changePageNum (val) { // 分页改变页码
-      this.pageNo = val;
+      this.pageNum = val;
       this.getList()
     },
 
     changePageSize (val) { // 分页改变页数
-      this.pageNo = 1;
+      this.pageNum = 1;
       this.pageSize = val;
       this.getList()
     },

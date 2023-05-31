@@ -35,7 +35,7 @@ export default {
     return {
       list: [], // 我的足迹，商品列表
       spinShow: false, // 控制loading是否加载
-      pageNo: 1,
+      pageNum: 1,
       pageSize: 10,
       total: 0
     };
@@ -79,18 +79,18 @@ export default {
       })
     },
     changePageNum (val) { // 修改页码
-      this.pageNo = val;
+      this.pageNum = val;
       this.getFootprintList()
     },
     changePageSize (val) { // 修改页数
-      this.pageNo = 1;
+      this.pageNum = 1;
       this.pageSize = val;
       this.getFootprintList()
     },
 
     //获取会员足迹
     getFootprintList() {
-      var params = this.axios.paramsHandler({pageNo: this.pageNo, pageSize: this.pageSize});
+      var params = this.axios.paramsHandler({pageNum: this.pageNum, pageSize: this.pageSize});
       getFootprintList(params).then(({data}) => {
         if (data && data.code=='200') {
           this.list = data.data.list;

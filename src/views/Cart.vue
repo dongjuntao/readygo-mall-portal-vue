@@ -328,7 +328,6 @@ export default {
             this.totalPrice = data.data.totalPrice;
             this.totalCount = data.data.totalCount;
             this.cartList = result
-            console.log("this.cartList == ", this.cartList)
             for (var i=0; i<result.length; i++) {
               var cartGoodsList = result[i].cartGoodsList;
               var shopChecked = true; //该店铺全选中

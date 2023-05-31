@@ -134,7 +134,7 @@ export default {
   data () {
     return {
       orderList: [], // 订单列表
-      pageNo: 1,
+      pageNum: 1,
       pageSize: 10,
       status: "",
       params: { // 请求参数
@@ -283,7 +283,7 @@ export default {
     getList () {
       this.spinShow = true;
       var params = this.axios.paramsHandler({
-        pageNo: this.pageNo,
+        pageNum: this.pageNum,
         pageSize: this.pageSize,
         status: this.status
       });

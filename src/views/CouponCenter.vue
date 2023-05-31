@@ -54,7 +54,7 @@ export default {
     return {
       list: [], // 优惠券列表
       total: 0, // 优惠券总数
-      pageNo: 1,
+      pageNum: 1,
       pageSize: 10,
       name: '',
     }
@@ -67,7 +67,7 @@ export default {
       var params = this.axios.paramsHandler({
         authStatus: 1,
         name: this.name,
-        pageNo: this.pageNo,
+        pageNum: this.pageNum,
         pageSize: this.pageSize
       });//审核通过的优惠券
       getCouponList(params).then(({data}) => {
@@ -102,18 +102,18 @@ export default {
     // 搜索优惠券
     search (item) {
       this.name = item
-      this.pageNo = 1
+      this.pageNum = 1
       this.getList()
     },
 
     // 分页 改变页码
     changePageNum (val) {
-      this.pageNo = val;
+      this.pageNum = val;
       this.getList()
     },
     // 分页 改变每页数
     changePageSize (val) {
-      this.pageNo = 1;
+      this.pageNum = 1;
       this.pageSize = val;
       this.getList()
     },

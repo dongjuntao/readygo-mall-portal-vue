@@ -181,7 +181,6 @@ export default {
       });
       getOrderAndDetailByParams(params).then(({data}) => {
         if (data && data.code=='200') {
-          console.log("data==",data)
           this.order = data.data;
         }
       })

@@ -89,7 +89,6 @@ export default {
     //获取收货信息
     getRecipientInfoList() {
       var params = this.axios.paramsHandler({});
-      console.log("params === ", params)
       getRecipientInfoList(params).then(({data}) => {
         if (data && data.code === "200") {
           this.list = data.data;

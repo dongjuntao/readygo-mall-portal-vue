@@ -281,7 +281,7 @@ export default {
       this.loading = true;
       var params = this.axios.paramsHandler({
         authStatus: 1,
-        pageNo: 1,
+        pageNum: 1,
         pageSize: 100
       });//审核通过的优惠券,最多取一百个
       getCouponList(params).then(({data}) => {
@@ -296,7 +296,7 @@ export default {
     getOrderList () {
       this.loading = true
       var params = this.axios.paramsHandler({
-        pageNo: 1,
+        pageNum: 1,
         pageSize: 10,
         status: ""
       });
@@ -335,7 +335,7 @@ export default {
     //获取会员足迹
     getFootprintList() {
       this.loading = true
-      var params = this.axios.paramsHandler({pageNo: this.pageNo, pageSize: this.pageSize});
+      var params = this.axios.paramsHandler({pageNum: this.pageNum, pageSize: this.pageSize});
       getFootprintList(params).then(({data}) => {
         if (data && data.code=='200') {
           this.tracksList = data.data.list;
