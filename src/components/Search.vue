@@ -9,7 +9,7 @@
         @click="$router.push('/')"
       />
       <i-input
-        v-model="searchData"
+        v-model="searchValue"
         size="large"
         class="search"
         placeholder="输入你想查找的商品"
@@ -62,22 +62,22 @@ export default {
   },
   data () {
     return {
-      searchData: '' // 搜索内容
+      searchValue: '' // 搜索内容
     };
   },
   methods: {
     selectTags (item) { // 选择热门标签
-      this.searchData = item;
+      this.searchValue = item;
       this.search();
     },
     search () { // 全平台搜索商品
       this.$router.push({
         path: '/goodsList',
-        query: { keyword: this.searchData }
+        query: { searchValue: this.searchValue }
       });
     },
     searchStore () { // 店铺搜索商品
-      this.$emit('search', this.searchData)
+      this.$emit('search', this.searchValue)
     }
   },
   computed: {

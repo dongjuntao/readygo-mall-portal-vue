@@ -60,7 +60,6 @@
 
 <script>
 import { getCategoryAndMergedCategory } from '@/api/mall-goods/goods-category';
-import storage from '@/plugins/storage.js'
 export default {
   name: 'GoodsListNav',
   props: {
@@ -139,7 +138,7 @@ export default {
       }
       let routerUrl = this.$router.resolve({
         path: '/goodsList',
-        query: {categoryId: arr.toString()}
+        query: {categories: arr.toString()}
       })
       window.open(routerUrl.href, '_blank')
     }

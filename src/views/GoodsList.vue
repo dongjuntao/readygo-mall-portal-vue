@@ -15,27 +15,18 @@
           <!-- 排序 -->
           <div class="goods-list-tool">
             <ul>
-              <li
-                v-for="(item, index) in goodsTool"
-                :key="index"
-                @click="orderBy(item.en, index)"
-              >
-                <span :class="{ 'goods-list-tool-active': index === sortIndex }"
-                  >{{ item.title }}<Icon type="ios-arrow-round-down"
-                /></span>
+              <li v-for="(item, index) in sortType" :key="index" @click="orderBy(item.value, index)">
+                <span :class="{ 'goods-list-tool-active': index === sortIndex }">
+                  {{ item.type }}
+                  <Icon type="ios-arrow-round-down"/>
+                </span>
               </li>
               <li @click="orderBy('price', 5, 'up')" class="price-sort">
                 <span :class="{ 'goods-list-tool-active': 5 === sortIndex }">
                   价格
                   <div>
-                    <Icon
-                      type="md-arrow-dropup"
-                      :class="{ 'price-color': sortPriceIndex == 'desc' }"
-                    />
-                    <Icon
-                      type="md-arrow-dropdown"
-                      :class="{ 'price-color': sortPriceIndex == 'asc' }"
-                    />
+                    <Icon type="md-arrow-dropup" :class="{ 'price-color': sortPriceIndex == 'desc' }"/>
+                    <Icon type="md-arrow-dropdown" :class="{ 'price-color': sortPriceIndex == 'asc' }"/>
                   </div>
                 </span>
               </li>
@@ -101,6 +92,7 @@
 <script>
 import GoodsClassNav from '@/components/nav/GoodsClassNav';
 import { getGoodsList } from '@/api/mall-goods/goods'
+import { getGoodsListFromES } from '@/api/mall-goods/es-goods'
 export default {
   name: 'GoodsList',
   beforeRouteEnter (to, from, next) {
@@ -110,51 +102,54 @@ export default {
   data () {
     return {
       sortIndex: 0, // 排序状态
-      sortPriceIndex: false, // 判断价格升序还是降序
-      goodsTool: [ // 排序类型
-        { title: '综合', en: '' },
-        { title: '销量', en: 'buyCount' },
-        { title: '评论数', en: 'commentNum' },
-        { title: '新品', en: 'releaseTime' }
+      sortPriceIndex: null, // 判断价格升序还是降序
+      sortType: [ // 排序类型
+        { type: '综合', value: 'comprehensive' },
+        { type: '销量', value: 'sales' },
+        // { title: '评论数', en: 'commentNum' },
+        { type: '新品', value: 'newGoods' }
       ],
       goodsList: [], // 商品列表
       loading: false, // 加载状态
       goodsListType:"",
       total: 0, // 列表总数
       params: { // 请求参数
-        pageNumber: 0,
+        pageNum: 1,
         pageSize: 20,
-        categoryId: ''
+        categories: '',
+        sortType: 0
       }
     };
   },
   watch: {
     $route () {
-      const keyword = this.$route.query.keyword
-      this.handleSearch(keyword)
+      const searchValue = this.$route.query.searchValue
+      this.handleSearch(searchValue)
     }
   },
   methods: {
     // 搜索
-    handleSearch (key) {
-      this.params.keyword = key
-      this.params.pageNumber = 0
+    handleSearch (searchValue) {
+      this.params.searchValue = searchValue
+      this.params.pageNum = 1
       this.getGoodsList()
     },
-    orderBy (data, index) {
+    orderBy (type, index) {
       // 排序
       this.sortIndex = index;
-      this.params.sort = data;
-      this.params.order = 'desc';
-      if (data === 'price') {
+      if (type === 'price') {
         if (!this.sortPriceIndex) {
           this.sortPriceIndex = 'asc';
         } else {
           this.sortPriceIndex === 'desc' ? (this.sortPriceIndex = 'asc') : (this.sortPriceIndex = 'desc');
         }
-        this.params.order = this.sortPriceIndex
-      } else {
-        this.sortPriceIndex = false
+        this.params.sortType = this.sortPriceIndex == 'desc' ? 3 : 4;
+      } else if (type == 'sales') {
+        this.params.sortType = 2;
+      } else if (type == 'newGoods') {
+        this.params.sortType = 1;
+      } else if (type == 'comprehensive'){
+        this.params.sortType = 0;
       }
       this.getGoodsList();
     },
@@ -168,25 +163,23 @@ export default {
     },
     // 分页 修改页码
     changePageNum (val) {
-      this.params.pageNumber = val;
+      this.params.pageNum = val;
       this.getGoodsList();
     },
     // 分页 修改页数
     changePageSize (val) {
-      this.params.pageNumber = 1;
+      this.params.pageNum = 1;
       this.params.pageSize = val;
       this.getGoodsList();
     },
     // 获取商品列表
     getGoodsList () {
       this.loading = true;
-      console.log("this.params ==",this.params)
-      getGoodsList(this.params).then(({data}) => {
+      getGoodsListFromES(this.params).then(({data}) => {
           this.loading = false;
-          console.log("data===============================",data)
           if (data && data.code == '200') {
-            this.goodsList = data.data.list;
-            this.total = data.result.totalCount;
+            this.goodsList = data.data.content;
+            this.total = data.data.totalElements;
           }
         }).catch(() => {
           this.loading = false;
@@ -199,9 +192,9 @@ export default {
     }
   },
   created () {
-    if (this.$route.query.categoryId) {
+    if (this.$route.query.categories) {
       Object.assign(this.params, this.$route.query)
-      this.params.categoryIds = this.$route.query.categoryId
+      this.params.categories = this.$route.query.categories
     } else {
       Object.assign(this.params, this.$route.query)
     }

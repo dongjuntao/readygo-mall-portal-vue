@@ -7,11 +7,11 @@
     <empty v-if="list.length === 0" />
     <ul class="track-list" v-else>
       <li v-for="(item, index) in list" :key="index" @click="goodsDetail(item.footprintGoodsVO.skuId, item.footprintGoodsVO.id)">
-        <img :src="item.footprintGoodsVO.image" :alt="item.footprintGoodsVO.image" width="200" height="200">
+        <img :src="item.footprintGoodsVO.image" :alt="item.footprintGoodsVO.image" width="150" height="150">
         <p class="ellipsis">{{item.footprintGoodsVO.name}}</p>
         <p>{{item.footprintGoodsVO.price | unitPrice('￥')}}</p>
         <span class="del-icon" @click.stop="deleteById(item.footprintGoodsVO.id)">
-          <Icon type="md-trash" />
+          <Icon style="color: #ff0000;" type="md-trash" />
         </span>
       </li>
     </ul>
@@ -115,7 +115,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   li{
-    width: 200px;
+    width: 150px;
     overflow: hidden;
     margin-left: 15px;
     margin-bottom: 10px;
@@ -140,15 +140,14 @@ export default {
     }
     .del-icon {
       display: none;
-      font-size: 30px;
-      background-color:rgba(0,0,0,.3);
+      font-size: 20px;
       position: absolute;
-      width: 40px;
-      height: 40px;
-      line-height: 40px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
       text-align: center;
       right: 0;
-      top: 0;
+      bottom: 3px;
       cursor: pointer;
     }
   }

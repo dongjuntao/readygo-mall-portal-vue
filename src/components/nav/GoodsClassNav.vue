@@ -2,7 +2,7 @@
   <div class="item-class-show">
     <div class="head-bar">
       <!-- 有商品分类展示商品分类 -->
-      <template v-if="$route.query.categoryId">
+      <template v-if="$route.query.categories">
         <!-- 头部展示筛选信息 -->
         <div @click="cateClick(tabBar,1)">{{ tabBar.name }}</div>
         <Icon type="ios-arrow-forward" />
@@ -31,7 +31,7 @@
       <template v-else>
         <div style="font-size:14px">全部结果</div>
         <Icon type="ios-arrow-forward" />
-        <div style="font-weight:bold;" class="mr_10">“{{params.keyword}}”</div>
+        <div style="font-weight:bold;" class="mr_10">{{params.searchValue ? '"'+ params.searchValue+'"' : ""}}</div>
       </template>
       <!-- 所选分类 -->
       <a
@@ -216,8 +216,8 @@ export default {
     },
     '$route': { // 监听路由
       handler (val, oVal) {
-        if (this.$route.query.categoryId) {
-          let cateId = this.$route.query.categoryId.split(',')
+        if (this.$route.query.categories) {
+          let cateId = this.$route.query.categories.split(',')
           Object.assign(this.params, this.$route.query)
           this.params.categoryId = cateId[cateId.length - 1]
         } else {
@@ -232,14 +232,15 @@ export default {
 
   methods: {
     getNav () { // 获取商品分类，分类下展示
-      if (!this.$route.query.categoryId) return
+      console.log("this.cateList==",this.cateList)
+      if (!this.$route.query.categories) return
       if (!this.cateList.categoryList.length) { // 商品分类存储在localstorage，接口未调用成功前再次刷新数据
         setTimeout(() => {
           this.getNav()
         }, 500)
         return
       }
-      const arr = this.$route.query.categoryId.split(',')
+      const arr = this.$route.query.categories.split(',')
       if (arr && arr.length > 0) {
         this.tabBar = this.cateList.categoryList.filter(e => {
           return e.id == arr[0]
@@ -264,19 +265,19 @@ export default {
         case 1:
           this.$router.push({
             path: '/goodsList',
-            query: {categoryId: item.id}
+            query: {categories: item.id}
           })
           break;
         case 2:
           this.$router.push({
             path: '/goodsList',
-            query: {categoryId: [item.parentId, item.id].toString()}
+            query: {categories: [item.parentId, item.id].toString()}
           })
           break;
         case 3:
           this.$router.push({
             path: '/goodsList',
-            query: {categoryId: [this.tabBar.id, item.parentId, item.id].toString()}
+            query: {categories: [this.tabBar.id, item.parentId, item.id].toString()}
           })
           break;
       }
@@ -389,8 +390,8 @@ export default {
   },
   mounted () {
     // 有分类id就根据id搜索
-    if (this.$route.query.categoryId) {
-      let cateId = this.$route.query.categoryId.split(',')
+    if (this.$route.query.categories) {
+      let cateId = this.$route.query.categories.split(',')
       Object.assign(this.params, this.$route.query)
       this.params.categoryId = cateId[cateId.length - 1]
     } else {
