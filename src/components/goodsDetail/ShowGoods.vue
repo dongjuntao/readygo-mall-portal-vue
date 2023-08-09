@@ -134,22 +134,22 @@
             <div class="item-select-row" v-if="seckillConfig">
               <InputNumber
                 :min="1"
-                :max="currentSku.stock"
-                :disabled="currentSku.stock === 0"
-                v-model="count"
-                :precision="0.1"
-              ></InputNumber>
-              <span class="inventory"> 库存{{ currentSku.stock }}</span>
-            </div>
-            <div class="item-select-row" v-else>
-              <InputNumber
-                :min="1"
                 :max="currentSku.seckillStock"
                 :disabled="currentSku.seckillStock === 0"
                 v-model="count"
                 :precision="0.1"
               ></InputNumber>
               <span class="inventory"> 库存{{ currentSku.seckillStock }}</span>
+            </div>
+            <div class="item-select-row" v-else>
+              <InputNumber
+                :min="1"
+                :max="currentSku.stock"
+                :disabled="currentSku.stock === 0"
+                v-model="count"
+                :precision="0.1"
+              ></InputNumber>
+              <span class="inventory"> 库存{{ currentSku.stock }}</span>
             </div>
           </div>
 

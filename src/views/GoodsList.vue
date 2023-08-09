@@ -130,6 +130,7 @@ export default {
   methods: {
     // 搜索
     handleSearch (searchValue) {
+      this.params.categories = '' //点击搜索时，把所选的商品分类清空
       this.params.searchValue = searchValue
       this.params.pageNum = 1
       this.getGoodsList()
@@ -175,6 +176,7 @@ export default {
     // 获取商品列表
     getGoodsList () {
       this.loading = true;
+      console.log("this.params===",this.params)
       getGoodsListFromES(this.params).then(({data}) => {
           this.loading = false;
           if (data && data.code == '200') {
@@ -192,9 +194,9 @@ export default {
     }
   },
   created () {
+    console.log("this.$route.query.categories==",this.$route.query.categories)
     if (this.$route.query.categories) {
       Object.assign(this.params, this.$route.query)
-      this.params.categories = this.$route.query.categories
     } else {
       Object.assign(this.params, this.$route.query)
     }

@@ -10,12 +10,12 @@ export const orderStatusList = [
     status: 'UNPAID'
   },
   {
-    name: '已付款',
-    status: 'PAID'
-  },
-  {
     name: '待发货',
     status: 'UNDELIVERED'
+  },
+  {
+    name: '部分发货',
+    status: 'PARTIAL_DELIVERED'
   },
   {
     name: '已发货',
@@ -24,10 +24,6 @@ export const orderStatusList = [
   {
     name: '已完成',
     status: 'FINISHED'
-  },
-  {
-    name: '待核验',
-    status: 'TAKE'
   },
   {
     name: '已取消',

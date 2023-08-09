@@ -418,6 +418,7 @@ export default {
 
       this.$Spin.show();
       createTrade(postData).then(({data}) => {
+        console.log("createTrade====================",data)
         this.$Spin.hide();
         if (data && data.code == '200') {
           this.$router.push({

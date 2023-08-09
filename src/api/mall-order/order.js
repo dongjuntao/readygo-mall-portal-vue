@@ -55,3 +55,19 @@ export function getOrderAndDetailByParams(params) {
     params: params
   })
 }
+
+export function confirmReceiptAll(params) {
+  return request({
+    url: prefix+'/order/confirmReceiptAll',
+    method: 'PUT',
+    params: params
+  })
+}
+
+export function confirmReceipt(params) {
+  return request({
+    url: prefix+'/order/confirmReceipt',
+    method: 'PUT',
+    params: params
+  })
+}

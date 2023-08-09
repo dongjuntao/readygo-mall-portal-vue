@@ -10,7 +10,7 @@
           class="width_300"
           search
           enter-button
-          v-model="params.keywords"
+          v-model="params.code"
           @on-search="getList"
           placeholder="请输入订单号搜索"
         />
@@ -19,67 +19,73 @@
     <!-- 订单列表 -->
     <empty v-if="orderList.length === 0" />
     <div class="order-content" v-else>
-      <div
-        class="order-list"
-        v-for="(order, onderIndex) in orderList"
-        :key="onderIndex"
-      >
+      <div class="order-list" v-for="(order, onderIndex) in orderList" :key="onderIndex">
         <div class="order-header">
           <div>
-            <div>{{ filterOrderStatus(order.status) }}</div>
-            <div>
-              订单号：{{ order.code }} &nbsp; &nbsp; &nbsp;{{order.createTime | formatDateTime}}
-            </div>
+            <span>{{order.createTime | formatDateTime}}</span> &nbsp;&nbsp;
+            <span>
+              订单号：{{ order.code }} &nbsp; &nbsp; &nbsp;
+            </span>
+            <span style="cursor: pointer; font-family: 微软雅黑; font-size: 13px; color: forestgreen">{{ order.merchantName }} </span>
+
           </div>
-          <div>
-            <Button @click="deleteOrder(order.code)" class="del-btn mr_10 fontsize_16" style="margin-top:-5px;" type="text" icon="ios-trash-outline" size="small"></Button>
-            <span>{{ order.totalPrice | unitPrice("￥") }}</span>
+          <div style="float:right; position: absolute; margin-left: 580px">
+            <div style="margin-left: 80px;">{{ filterOrderStatus(order.status) }}</div>
           </div>
+          <div style="float: right; position: absolute; margin-left: 700px">
+            <div style="text-align: right; font-weight: bold; color: #de0202">{{ order.totalPrice | unitPrice("￥") }}</div>
+          </div>
+
+          <template>
+            <Dropdown trigger="click" style="margin-left: 20px">
+              <Button type="primary" size="small">
+                操作
+                <Icon type="ios-arrow-down"></Icon>
+              </Button>
+              <template #list>
+                <DropdownMenu>
+                  <DropdownItem @click.native="orderDetail(order.code)">
+                    订单详情
+                  </DropdownItem>
+                  <!-- 取消订单 (未支付状态（UNPAID），已支付状态（），未发货状态（UNDELIVERED）才能取消订单)-->
+                  <DropdownItem v-if="order.status=='UNPAID' || order.status=='UNDELIVERED'" @click.native="handleCancelOrder(order.code)">
+                    取消订单
+                  </DropdownItem>
+                  <!-- 去支付 (未支付状态（UNPAID）才能去支付)-->
+                  <DropdownItem v-if="order.status == 'UNPAID'" @click.native="goPay(order.tradeCode, order.code)">
+                    去支付
+                  </DropdownItem>
+                  <!-- 确认收货 (待收货状态（DELIVERED）才能确认收货)-->
+                  <DropdownItem v-if="order.status == 'DELIVERED'" @click.native="confirmReceiptAll(order.code)">
+                    确认收货
+                  </DropdownItem>
+                  <!-- 售后 (已完成的订单才能申请售后)-->
+                  <DropdownItem v-if="order.status == 'FINISHED'" @click.native="applyAfterSale(order.orderDetailList)">
+                    申请售后
+                  </DropdownItem>
+                  <DropdownItem @click.native="deleteOrder(order.code)">
+                    删除
+                  </DropdownItem>
+                </DropdownMenu>
+              </template>
+            </Dropdown>
+          </template>
         </div>
         <div class="order-body">
           <div class="goods-list">
-            <div
-              v-for="(goods, goodsIndex) in order.orderDetailList"
-              :key="goodsIndex"
-            >
-              <img
-                @click="goodsDetail(goods.goodsSkuId, goods.goodsId)"
-                class="hover-color"
-                :src="goods.goodsImage"
-                alt=""
-              />
+            <div v-for="(orderDetail, orderDetailIndex) in order.orderDetailList" :key="orderDetailIndex">
+              <img @click="goodsDetail(orderDetail.goodsSkuId, orderDetail.goodsId)" class="hover-color" :src="orderDetail.goodsImage" alt=""/>
               <div>
-                <div class="hover-color" @click="goodsDetail(goods.goodsSkuId, goods.goodsId)">{{ goods.goodsName }}</div>
+                <div class="hover-color" @click="goodsDetail(orderDetail.goodsSkuId, orderDetail.goodsId)">{{ orderDetail.goodsName }}</div>
                 <div class="mt_10">
-                  <span class="global_color"
-                    >{{ goods.goodsSellingPrice | unitPrice("￥") }} </span
-                  >x {{ goods.goodsCount }}
+                  <span class="global_color">{{ orderDetail.goodsSellingPrice | unitPrice("￥") }} </span>x {{ orderDetail.goodsCount }}
                 </div>
-                <Button v-if="goods.commentStatus == 'UNFINISHED'" @click="comment(order.code, goodsIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
-                <Button v-if="goods.complainStatus == 'NO_APPLY'" @click="complain(order.code, goodsIndex)" type="warning" class="fontsize_12" size="small" style="position:relative;top:-22px;left:100px">投诉</Button>
+                <!-- 确认收货 (待收货状态（DELIVERED）才能确认收货)-->
+                <Button v-if="orderDetail.subStatus == 'DELIVERED'" @click="confirmReceipt(orderDetail.subCode)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">确认收货</Button>
+                <Button v-if="orderDetail.commentStatus == 'NOT_COMMENTED'" @click="comment(orderDetail.subCode, orderDetailIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
+                <Button v-if="orderDetail.complainStatus == 'NO_APPLY'" @click="complain(orderDetail.subCode, orderDetailIndex)" type="warning" class="fontsize_12" size="small" style="position:relative;top:-22px;left:100px">投诉</Button>
               </div>
             </div>
-          </div>
-          <div>
-            <span @click="shopPage(order.merchantId)">{{ order.merchantName }}</span>
-          </div>
-          <div>
-            <!-- 订单基础操作 -->
-            <Button @click="orderDetail(order.code)" type="info" size="small">订单详情</Button>
-            <!-- 取消订单 (未支付状态（UNPAID），已支付状态（），未发货状态（UNDELIVERED）才能取消订单)-->
-            <Button @click="handleCancelOrder(order.code)" type="error"
-                    v-if="order.status=='UNPAID' || order.status=='PAID' || order.status=='UNDELIVERED'" size="small">取消订单
-            </Button>
-            <!-- 去支付 (未支付状态（UNPAID）才能去支付)-->
-            <Button @click="goPay(order.tradeCode, order.code)" size="small" type="success"
-                    v-if="order.status == 'UNPAID'">去支付
-            </Button>
-            <!-- 确认收货 (待收货状态（DELIVERED）才能确认收货)-->
-            <Button @click="received(order.code)" size="small" type="warning"
-                    v-if="order.status == 'DELIVERED'">确认收货
-            </Button>
-            <!-- 售后 (已完成的订单才能申请售后)-->
-            <Button v-if="order.status == 'FINISHED'" @click="applyAfterSale(order.orderDetailList)" size="small">申请售后</Button>
           </div>
         </div>
       </div>
@@ -122,7 +128,7 @@ import { sureReceived, delOrder } from '@/api/order';
 import { afterSaleReason } from '@/api/member';
 import { orderStatusList } from '../enumeration.js'
 
-import { getOrderList, cancelOrder, deleteOrder } from "@/api/mall-order/order"
+import { getOrderList, cancelOrder, deleteOrder, confirmReceiptAll, confirmReceipt } from "@/api/mall-order/order"
 export default {
   name: 'MyOrder',
   props: {
@@ -134,15 +140,12 @@ export default {
   data () {
     return {
       orderList: [], // 订单列表
-      pageNum: 1,
-      pageSize: 10,
       status: "",
       params: { // 请求参数
-        pageNumber: 1,
+        pageNum: 1,
         pageSize: 10,
-        // orderStatus: 'ALL',
-        keywords: '',
-        tag: 'ALL'
+        status: '',
+        code: ''
       },
       cancelParams: { // 取消售后参数
         orderCode: '',
@@ -185,16 +188,16 @@ export default {
     change (index) {
       switch (index) {
         case 0:
-          this.status = ""
+          this.params.status = ""
           break;
         case 1:
-          this.status = "UNPAID"
+          this.params.status = "UNPAID"
           break;
         case 2:
-          this.status = "DELIVERED"
+          this.params.status = "DELIVERED"
           break;
         case 3:
-          this.status = "FINISHED"
+          this.params.status = "FINISHED"
           break;
       }
       this.getList()
@@ -214,13 +217,38 @@ export default {
       this.$router.push({ name: 'OrderDetail', query: {code: code} });
     },
 
-    received (sn) { // 确认收货
-      sureReceived(sn).then(res => {
-        if (res.success) {
-          this.$Message.success('确认收货成功')
-          this.getList()
-        }
-      })
+    confirmReceiptAll (code) { // 全部确认收货
+      this.$Modal.confirm({
+        title: '确认收货',
+        content: '<p>是否确认收货？</p>',
+        onOk: () => {
+          var params = this.axios.paramsHandler({code: code});
+          confirmReceiptAll(params).then(({data}) => {
+            if (data && data.code == '200') {
+              this.$Message.success('确认收货成功');
+              this.getList()
+            }
+          })
+        },
+        onCancel: () => {}
+      });
+    },
+
+    confirmReceipt (subCode) { // 单个确认收货
+      this.$Modal.confirm({
+        title: '确认收货',
+        content: '<p>是否确认收货？</p>',
+        onOk: () => {
+          var params = this.axios.paramsHandler({ subCode: subCode });
+          confirmReceipt(params).then(({data}) => {
+            if (data && data.code == '200') {
+              this.$Message.success('确认收货成功');
+              this.getList()
+            }
+          })
+        },
+        onCancel: () => {}
+      });
     },
 
     // 去支付
@@ -282,11 +310,7 @@ export default {
     // 获取订单列表
     getList () {
       this.spinShow = true;
-      var params = this.axios.paramsHandler({
-        pageNum: this.pageNum,
-        pageSize: this.pageSize,
-        status: this.status
-      });
+      var params = this.axios.paramsHandler(this.params);
       getOrderList(params).then(({data}) => {
         this.spinShow = false
         if (data && data.code == 200) {
@@ -297,11 +321,11 @@ export default {
     },
 
     changePageNum (val) { // 修改页码
-      this.params.pageNumber = val;
+      this.params.pageNum = val;
       this.getList()
     },
     changePageSize (val) { // 修改页数
-      this.params.pageNumber = 1;
+      this.params.pageNum = 1;
       this.params.pageSize = val;
       this.getList()
     },
@@ -329,7 +353,6 @@ export default {
 
 
     filterOrderStatus (status) { // 获取订单状态中文
-      console.log("status == ", status)
       const ob = this.orderStatusList.filter(e => { return e.status === status });
       return ob[0].name
     }
