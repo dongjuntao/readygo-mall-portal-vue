@@ -56,6 +56,19 @@ export function getOrderAndDetailByParams(params) {
   })
 }
 
+/**
+ * 根据参数获取订单明细
+ * @param params
+ * @returns {AxiosPromise}
+ */
+export function getOrderDetailByParams(params) {
+  return request({
+    url: prefix+'/order/getOrderDetailByParams',
+    method: 'GET',
+    params: params
+  })
+}
+
 export function confirmReceiptAll(params) {
   return request({
     url: prefix+'/order/confirmReceiptAll',

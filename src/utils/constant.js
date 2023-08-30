@@ -26,11 +26,16 @@ const memberConstant = {
   member_avatar: "/member/avatar" //会员头像
 }
 
+const commentConstant = {
+  comment_pictures_folder_name: '/comment/pictures'
+}
+
 
 export {
   brandConstant,
   goodsConstant,
   adminUserConstant,
   homepageConstant,
-  memberConstant
+  memberConstant,
+  commentConstant
 };

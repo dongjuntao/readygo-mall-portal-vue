@@ -82,7 +82,7 @@
                 </div>
                 <!-- 确认收货 (待收货状态（DELIVERED）才能确认收货)-->
                 <Button v-if="orderDetail.subStatus == 'DELIVERED'" @click="confirmReceipt(orderDetail.subCode)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">确认收货</Button>
-                <Button v-if="orderDetail.commentStatus == 'NOT_COMMENTED'" @click="comment(orderDetail.subCode, orderDetailIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
+                <Button v-if="orderDetail.commentStatus == 'NOT_COMMENTED'" @click="comment(order.code, orderDetail.subCode,order.merchantId, orderDetailIndex)" size="small" type="success" class="fontsize_12" style="position:relative;top:-22px;left:100px">评价</Button>
                 <Button v-if="orderDetail.complainStatus == 'NO_APPLY'" @click="complain(orderDetail.subCode, orderDetailIndex)" type="warning" class="fontsize_12" size="small" style="position:relative;top:-22px;left:100px">投诉</Button>
               </div>
             </div>
@@ -282,8 +282,8 @@ export default {
     afterSaleSelect (item) {
       this.$router.push({name: 'ApplyAfterSale', query: {sn: item.sn}})
     },
-    comment (sn, goodsIndex) { // 评价
-      this.$router.push({path: '/home/addEval', query: {sn, index: goodsIndex}})
+    comment (code, subCode, merchantId, goodsIndex) { // 评价
+      this.$router.push({path: '/home/addEval', query: {subCode, index: goodsIndex, code: code, merchantId: merchantId}})
     },
     complain (sn, goodsIndex) { // 投诉
       this.$router.push({name: 'Complain', query: {sn, index: goodsIndex}})

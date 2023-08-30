@@ -3,40 +3,40 @@
     <div class="title">
       <card _Title="订单评价" :_Size="16"></card>
       <p>
-        <span class="color999">订单号：</span><span>{{$route.query.sn}}</span>
-        <span class="color999 ml_20" v-if="order.order">{{order.order.paymentTime}}</span>
+        <span class="color999">订单号：</span><span>{{ $route.query.subCode }}</span>
+        <span class="color999 ml_20" v-if="orderDetail">{{ orderDetail.createTime | formatDateTime }}</span>
       </p>
     </div>
     <!-- 物流评分、服务评分 -->
     <div class="delivery-rate">
       <div class="fontsize_16">物流服务评价：</div>
       <div class="color999">
-        <span>物流评价：<Rate v-model="form.deliveryScore" /></span>
-        <span>服务评价：<Rate v-model="form.serviceScore" /></span>
-        <span>描述评价：<Rate v-model="form.descriptionScore" /></span>
+        <span>物流评价：<Rate v-model="form.logisticsEvaluationLevel" /></span>
+        <span>服务评价：<Rate v-model="form.serviceEvaluationLevel" /></span>
+        <span>描述评价：<Rate v-model="form.descriptionEvaluationLevel" /></span>
       </div>
     </div>
     <!-- 添加订单评价  左侧商品详情  右侧评价框 -->
     <ul class="goods-eval">
       <li >
         <div class="goods-con">
-          <img :src="orderGoods.image" class="hover-pointer" alt="" width="100" @click="goGoodsDetail(orderGoods.skuId, orderGoods.goodsId)">
-          <p class="hover-pointer color999" @click="goGoodsDetail(orderGoods.skuId, orderGoods.goodsId)">{{orderGoods.goodsName}}</p>
-          <p>{{orderGoods.goodsPrice | unitPrice('￥')}}</p>
+          <img :src="orderDetail.goodsImage" class="hover-pointer" alt="" width="100" @click="goGoodsDetail(orderDetail.goodsSkuId, orderDetail.goodsId)">
+          <p class="hover-pointer color999" @click="goGoodsDetail(orderDetail.goodsSkuId, orderDetail.goodsId)">{{orderDetail.goodsName}}</p>
+          <p>{{orderDetail.goodsSellingPrice | unitPrice('￥')}}</p>
         </div>
 
         <div class="eval-con">
           <div>
             <span class="color999">商品评价：</span>
-            <RadioGroup style="margin-bottom:5px;color:#999" v-model="orderGoods.grade" type="button" button-style="solid">
-              <Radio label="GOOD">好评</Radio>
-              <Radio label="MODERATE">中评</Radio>
-              <Radio label="WORSE">差评</Radio>
+            <RadioGroup style="margin-bottom:5px;color:#999" v-model="form.goodsEvaluationLevel" type="button" button-style="solid">
+              <Radio :label="3">好评</Radio>
+              <Radio :label="2">中评</Radio>
+              <Radio :label="1">差评</Radio>
             </RadioGroup>
-            <Input type="textarea" maxlength="500" show-word-limit :rows="4" v-model="orderGoods.content" />
+            <Input type="textarea" maxlength="500" show-word-limit :rows="4" v-model="form.evaluateContent" />
           </div>
           <div style="display:flex;align-items:center;">
-            <div class="demo-upload-list" v-for="(img, index) in orderGoods.uploadList" :key="index">
+            <div class="demo-upload-list" v-for="(img, index) in form.uploadList" :key="index">
               <img :src="img">
               <div class="demo-upload-list-cover">
                   <Icon type="ios-eye-outline" @click.native="handleView(img)"></Icon>
@@ -44,16 +44,16 @@
               </div>
             </div>
             <Upload
-                :show-upload-list="false"
-                :on-success="handleSuccess"
-                :before-upload="handleBeforeUpload"
-                :format="['jpg','jpeg','png']"
-                :action="action"
-                :headers="accessToken"
-                style="display: inline-block;width:58px;">
-                <div class="hover-pointer icon-upload" style="">
-                  <Icon type="ios-camera" size="20"></Icon>
-                </div>
+              action="#"
+              :show-upload-list="false"
+              :on-success="handleSuccess"
+              :before-upload="handleBeforeUpload"
+              :format="['jpg','jpeg','png']"
+              :headers="accessToken"
+              style="display: inline-block;width:58px;">
+              <div class="hover-pointer icon-upload" style="">
+                <Icon type="ios-camera" size="20"></Icon>
+              </div>
             </Upload>
           </div>
         </div>
@@ -66,22 +66,25 @@
   </div>
 </template>
 <script>
-import { orderDetail } from '@/api/order.js';
-import { addEvaluation } from '@/api/member.js';
-import { commonUrl } from '@/plugins/request.js';
 import storage from '@/plugins/storage';
+import { getOrderDetailByParams } from '@/api/mall-order/order'
+import { commentConstant } from '@/utils/constant'
+import { fileUpload } from '@/api/mall-file/file'
+import { saveEvaluation } from '@/api/mall-goods/evaluation'
+
 export default {
   data () {
     return {
-      order: {}, // 订单详情
-      orderGoods: {}, // 订单商品
+      orderDetail: {}, //订单商品详情
       form: { // 评分展示
-        deliveryScore: 5,
-        serviceScore: 5,
-        descriptionScore: 5
+        logisticsEvaluationLevel: 5, //物流评价
+        serviceEvaluationLevel: 5, //服务评价
+        descriptionEvaluationLevel: 5, //描述评价
+        goodsEvaluationLevel: 3, //好中差评
+        evaluateContent: '', //评价内容
+        uploadList: [] //上传的图片
       }, // 表单
       visible: false, // 图片预览
-      action: commonUrl + '/common/upload/file', // 上传地址
       accessToken: {}, // 验证token
       previewImage: '', // 预览图片地址
       loading: false // 提交加载状态
@@ -89,39 +92,39 @@ export default {
   },
   methods: {
     getOrderDetail () { // 获取订单详情
-      orderDetail(this.$route.query.sn).then(res => {
-        this.order = res.result
-        this.orderGoods = res.result.orderItems[this.$route.query.index]
-        this.$set(this.orderGoods, 'grade', 'GOOD')
-        this.orderGoods.uploadList = []
+      var params = this.axios.paramsHandler({subCode: this.$route.query.subCode});
+      getOrderDetailByParams(params).then(({data}) => {
+        this.orderDetail = data.data;
+        this.form.uploadList = []
       })
     },
+
     save () { // 保存评价
-      if (!this.form.serviceScore || !this.form.deliveryScore) {
+      if (!this.form.logisticsEvaluationLevel || !this.form.serviceEvaluationLevel) {
         this.$Message.warning('物流服务评价不能为空')
         return false;
       }
-
-      if (!this.form.descriptionScore) {
+      if (!this.form.descriptionEvaluationLevel) {
         this.$Message.warning('描述评价不能为空')
       }
-
       this.loading = true;
-      let goods = this.orderGoods
       let params = {
-        goodsId: goods.goodsId,
-        orderItemSn: goods.sn,
-        skuId: goods.skuId,
-        descriptionScore: this.form.descriptionScore,
-        serviceScore: this.form.serviceScore,
-        deliveryScore: this.form.deliveryScore,
-        grade: goods.grade,
-        content: goods.content || '',
-        images: goods.uploadList.toString()
+        goodsId: this.orderDetail.goodsId,
+        skuId: this.orderDetail.goodsSkuId,
+        merchantId: this.$route.query.merchantId,
+        logisticsEvaluationLevel: this.form.descriptionEvaluationLevel,
+        serviceEvaluationLevel: this.form.serviceEvaluationLevel,
+        descriptionEvaluationLevel: this.form.descriptionEvaluationLevel,
+        goodsEvaluationLevel: this.form.goodsEvaluationLevel,
+        evaluateContent: this.form.evaluateContent,
+        images: this.form.uploadList.toString(),
+        orderCode: this.$route.query.code,
+        subOrderCode: this.$route.query.subCode
       }
-      addEvaluation(params).then(res => {
+      var postData = this.axios.dataHandler(params);
+      saveEvaluation(postData).then(({data}) => {
         this.loading = false
-        if (res.success) {
+        if (data && data.code == 200) {
           this.$Message.success('评价成功')
           this.$router.push('/home/CommentList')
         }
@@ -132,7 +135,7 @@ export default {
     goGoodsDetail (skuId, goodsId) { // 跳转商品详情
       let routerUrl = this.$router.resolve({
         path: '/goodsDetail',
-        query: {skuId, goodsId}
+        query: { skuId: skuId, id: goodsId }
       })
       window.open(routerUrl.href, '_blank')
     },
@@ -141,22 +144,43 @@ export default {
       this.visible = true;
     },
     handleRemove (index) { // 移除图片
-      this.orderGoods.uploadList.splice(index, 1)
+      this.form.uploadList.splice(index, 1)
       this.$forceUpdate()
     },
     handleSuccess (res, file) { // 上传成功回调
-      this.orderGoods.uploadList.push(res.result)
+      this.form.uploadList.push(res.result)
       this.$forceUpdate()
     },
-    handleBeforeUpload () { // 上传之前钩子
-      const check = this.orderGoods.uploadList.length < 10;
+
+    /**
+     * 上传前校验文件
+     */
+    handleBeforeUpload(file){
+      const check = this.form.uploadList.length < 9;
       if (!check) {
-        this.$Notice.warning({
-          title: '最多可以上传九张图片'
-        });
+        this.$Message.warning('最多可以上传九张图片');
         return check;
       }
+      this.file = file;
+      const isImg = (file.size / 1024 / 1024) < 3
+      const isType = file.type === "image/png"
+      const isType2 = file.type === "image/jpeg"
+      if (!isImg) {
+        this.$Message.error('上传图片大小不能超过 3MB!')
+      } else if (!isType && !isType2) {
+        this.$Message.error('上传图片格式为png或jpg')
+      } else {
+        let formData = new FormData();
+        formData.append("files", this.file);
+        var params = this.axios.paramsHandler({ folderName: commentConstant.comment_pictures_folder_name })
+        fileUpload(formData, params).then(({data}) => {
+          this.form.uploadList.push(data.data)
+          this.$forceUpdate()
+        })
+      }
+      return false
     }
+
   },
   mounted () {
     window.scrollTo(0, 0)
